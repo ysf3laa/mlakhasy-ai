@@ -11,6 +11,7 @@
   [data-theme=dark]{--bg:#0b1120;--surface:#111827;--surface2:#0f172a;--border:#1f2937;--text:#f8fafc;--muted:#94a3b8;--primary:#6366f1;--primary-h:#818cf8;--soft:rgba(99,102,241,.14);--shadow:0 1px 2px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.24)}
   *{box-sizing:border-box}body{margin:0;font-family:"Tajawal",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
   a{color:inherit;text-decoration:none}button,input,select,textarea{font-family:inherit}
+  bdi{unicode-bidi:isolate}
   .hidden{display:none!important}:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
   .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
   nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border)}
@@ -82,11 +83,19 @@
   .fc-i{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--surface)}
   .fc-f{padding:12px;font-weight:800;background:var(--soft);color:var(--primary)}.fc-b{padding:12px;color:var(--muted)}
   .empty{text-align:center;padding:40px 20px;color:var(--muted)}
-  .toast{position:fixed;top:18px;inset-inline-start:18px;z-index:200;display:grid;gap:10px}
+  .toast{position:fixed;top:18px;inset-inline-start:18px;z-index:300;display:grid;gap:10px}
   .tst{min-width:240px;max-width:340px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);animation:sd .25s}
   .tst.ok{border-color:rgba(16,185,129,.4)}.tst.err{border-color:rgba(244,63,94,.4)}.tst.warn{border-color:rgba(245,158,11,.4)}
   @keyframes sd{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
-  @media(max-width:860px){.app{grid-template-columns:1fr}.side{flex-direction:row;overflow-x:auto;border-inline-end:none;border-bottom:1px solid var(--border)}.side-foot{display:none}.row2{grid-template-columns:1fr}}
+  @media(max-width:860px){
+    .app{grid-template-columns:1fr}
+    .side{position:fixed;bottom:0;left:0;right:0;top:auto;flex-direction:row;justify-content:space-around;align-items:center;border-inline-end:none;border-top:1px solid var(--border);padding:8px 6px;z-index:60;box-shadow:0 -4px 16px rgba(15,23,42,.06)}
+    .side .nav-i{flex-direction:column;gap:3px;padding:6px 12px;font-size:12px;text-align:center;width:auto;border-radius:12px}
+    .side-foot{display:none}
+    .main{padding:16px;padding-bottom:88px}
+    .row2{grid-template-columns:1fr}
+    .head{flex-direction:column;align-items:flex-start}
+  }
 </style>
 </head>
 <body>
@@ -109,7 +118,7 @@
 <div id="landing">
   <header class="hero"><div class="wrap">
     <h1>حوّل محاضراتك إلى <span>ملخصات ذكية</span> جاهزة للمذاكرة</h1>
-    <p>ارفع PDF أو صورة أو نص، واحصل على ملخص منظم، أهم نقاط، مصطلحات، وأسئلة مراجعة — بالعربي والإنجليزي واللاتيني. وتقدر ترجّع تاني تفتح ملفك أو تحمّله في أي وقت.</p>
+    <p>ارفع المحاضرة (ملف أو صورة أو نص)، واحصل على ملخص منظم، أهم نقاط، مصطلحات، وأسئلة مراجعة — بالعربي والإنجليزي واللاتيني.</p>
     <div class="hero-cta">
       <button class="btn btn-p btn-lg" onclick="openAuth('register')">ابدأ مجانًا الآن</button>
       <button class="btn btn-s btn-lg" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">ازاي بيشتغل؟</button>
@@ -125,14 +134,14 @@
       <div class="feat"><div class="ic">💾</div><h3>ملفاتك بترجع لك</h3><p>ارفع المحاضرة، وبعدين افتحها أو حمّلها تاني في أي وقت من أي جهاز. مش بتضيع.</p></div>
       <div class="feat"><div class="ic">❓</div><h3>أسئلة وبطاقات حفظ</h3><p>بيولّد أسئلة مراجعة وبطاقات حفظ تلقائيًا عشان تذاكر بذكاء قبل الامتحان.</p></div>
       <div class="feat"><div class="ic">🔒</div><h3>خصوصية وتحكم</h3><p>ملفاتك مربوطة بحسابك بس، وتقدر تحذفها في أي وقت. بياناتك ملكك.</p></div>
-      <div class="feat"><div class="ic">⚡</div><h3>سريع ومجاني</h3><p>نظام ذكي يوزّع الطلبات على أكتر من مزود AI عشان الموقع عمره ما يوقف.</p></div>
+      <div class="feat"><div class="ic">⚡</div><h3>سريع ومجاني</h3><p>نظام ذكي يوزّع الطلبات على أكتر من مزود ذكاء اصطناعي عشان الموقع عمره ما يوقف.</p></div>
     </div>
   </div></section>
 
   <section class="sec" id="how" style="background:var(--surface2)"><div class="wrap">
     <h2>ازاي بيشتغل؟</h2><p class="sub">3 خطوات وبس</p>
     <div class="steps">
-      <div class="step"><h3>ارفع ملفك</h3><p>اسحب PDF أو صورة أو نص، أو اختره من جهازك. حتى 30MB.</p></div>
+      <div class="step"><h3>ارفع ملفك</h3><p>اسحب المحاضرة أو اخترها من جهازك. حتى <bdi>30</bdi> ميجابايت.</p></div>
       <div class="step"><h3>الذكاء بيفهم</h3><p>النظام بيقرأ المحتوى وينظّمه في أقسام ونقاط ومصطلحات.</p></div>
       <div class="step"><h3>ذاكر وحمّل</h3><p>راجع الملخص، احل الأسئلة، احفظ البطاقات، وحمّل الملخص أو الملف الأصلي.</p></div>
     </div>
@@ -163,9 +172,9 @@
 
 <div id="app" class="hidden"><div class="app">
   <aside class="side">
-    <button class="nav-i on" data-v="dash" onclick="go('dash')">🏠 الرئيسية</button>
-    <button class="nav-i" data-v="upload" onclick="go('upload')">⬆️ رفع وتلخيص</button>
-    <button class="nav-i" data-v="lib" onclick="go('lib')">📚 مكتبتي</button>
+    <button class="nav-i on" data-v="dash" onclick="go('dash')">🏠<span>الرئيسية</span></button>
+    <button class="nav-i" data-v="upload" onclick="go('upload')">⬆️<span>رفع</span></button>
+    <button class="nav-i" data-v="lib" onclick="go('lib')">📚<span>مكتبتي</span></button>
     <div class="side-foot"><span class="pill" id="sideEmail"></span></div>
   </aside>
   <main class="main">
@@ -175,12 +184,12 @@
       <div class="card" style="margin-top:18px"><div class="head"><h1 style="font-size:20px">آخر الملخصات</h1></div><div id="recent"></div></div>
     </section>
     <section id="v-upload" class="hidden">
-      <div class="head"><div><h1>ارفع ملفك</h1><p>PDF، صورة، أو نص — حتى 30MB</p></div></div>
+      <div class="head"><div><h1>ارفع ملفك</h1><p>ملف أو صورة أو نص — حتى <bdi>30</bdi> ميجابايت</p></div></div>
       <div class="row2">
         <div class="card">
           <label class="dz" id="dz">
             <input type="file" id="file" accept=".pdf,.txt,image/*" hidden>
-            <div class="big">📤</div><strong>اسحب الملف هنا أو اضغط للاختيار</strong><small>PDF, TXT, PNG, JPG, WEBP</small>
+            <div class="big">📤</div><strong>اسحب الملف هنا أو اضغط للاختيار</strong><small>PDF · TXT · PNG · JPG · WEBP</small>
           </label>
           <div id="picked"></div>
         </div>
@@ -212,7 +221,6 @@
 </div></div>
 
 <script type="module">
-/* ====== الرابط جاهز، متغيّرش حاجة هنا ====== */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDVSVBU-HIH4iLQbJuQ_XTCRXGr6SSKc3Y",
   authDomain: "mlakhasy-570a9.firebaseapp.com",
@@ -223,7 +231,6 @@ const FIREBASE_CONFIG = {
 };
 const WORKER_URL = "https://mlakhasy-ai.ysf-3laa.workers.dev";
 const MAX_MB = 30, RETENTION_DAYS = 180;
-/* ========================================== */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -239,11 +246,11 @@ const esc = s => String(s??"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;'
 const fmt = b => b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
 const ts = d => d?.createdAt?.seconds || 0;
 const ageDays = d => (Date.now()/1000 - ts(d)) / 86400;
-function toast(m,t=''){ const d=document.createElement('div'); d.className='tst '+t; d.textContent=m; $('#toast').appendChild(d); setTimeout(()=>{d.style.opacity=0;setTimeout(()=>d.remove(),250)},3200); }
+function toast(m,t=''){ const d=document.createElement('div'); d.className='tst '+t; d.textContent=m; $('#toast').appendChild(d); setTimeout(()=>{d.style.opacity=0;setTimeout(()=>d.remove(),250)},3600); }
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
 
 let currentUser=null, pickedFile=null, pickedURL=null;
-const META = {}; // docId -> {fileId, fileName, fileDeleted}
+const META = {};
 
 window.openAuth = m => { $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth = () => $('#authModal').classList.add('hidden');
@@ -297,7 +304,7 @@ dz.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
 fileInput.addEventListener('change', e => pick(e.target.files[0]));
 function pick(f){
   if (!f) return;
-  if (f.size > MAX_MB*1024*1024) return toast('الملف أكبر من '+MAX_MB+'MB','err');
+  if (f.size > MAX_MB*1024*1024) return toast('الملف أكبر من '+MAX_MB+' ميجابايت','err');
   const ok = f.type==='application/pdf' || f.type==='text/plain' || f.type.startsWith('image/') || /\.(pdf|txt|png|jpe?g|webp)$/i.test(f.name);
   if (!ok) return toast('نوع الملف غير مدعوم','err');
   pickedFile = f;
@@ -307,11 +314,17 @@ function pick(f){
   $('#go').disabled = false;
 }
 
-// استدعاء الـ Worker مع توكن الدخول
+// استدعاء الـ Worker مع توكن + تعامل واضح مع فشل الاتصال
 async function worker(path, opts={}) {
   const token = await currentUser.getIdToken();
   const h = Object.assign({}, opts.headers || {}, { 'Authorization': 'Bearer ' + token });
-  return fetch(WORKER_URL + path, { ...opts, headers: h });
+  let res;
+  try {
+    res = await fetch(WORKER_URL + path, { ...opts, headers: h });
+  } catch (e) {
+    throw new Error('تعذّر الاتصال بالخادم. اتأكد إنك مش على VPN وإن الإنترنت شغال، وجرّب تاني.');
+  }
+  return res;
 }
 
 window.summarize = async () => {
@@ -320,7 +333,6 @@ window.summarize = async () => {
   $('#procName').textContent = pickedFile.name;
   $('#bar').style.width = '15%'; $('#procMsg').textContent = 'بيرفع الملف بأمان…';
   try {
-    // 1) رفع خام في R2
     const up = await worker('/file', {
       method: 'PUT',
       headers: { 'X-File-Name': encodeURIComponent(pickedFile.name), 'Content-Type': pickedFile.type || 'application/octet-stream' },
@@ -331,7 +343,6 @@ window.summarize = async () => {
     const fileId = upJ.fileId;
     $('#bar').style.width = '45%'; $('#procMsg').textContent = 'الملف اتخزن، والذكاء بيفهم ويولّد الملخص…';
 
-    // 2) تلخيص
     const su = await worker('/summarize', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ fileId, lang: $('#sLang').value, type: $('#sType').value }),
@@ -340,7 +351,6 @@ window.summarize = async () => {
     if (!su.ok || suJ.error) throw new Error(suJ.message || 'فشل التلخيص');
     $('#bar').style.width = '90%'; $('#procMsg').textContent = 'بنسّق النتيجة…';
 
-    // 3) تخزين في Firestore
     const docRef = await addDoc(collection(db, 'summaries'), {
       uid: currentUser.uid, fileName: pickedFile.name, fileType: pickedFile.type,
       fileSize: pickedFile.size, fileId, provider: suJ.provider, summary: suJ.summary,
@@ -361,7 +371,7 @@ function renderResult(rec){
   let html = `<div class="head"><div>
     <button class="btn btn-g" onclick="go('lib')" style="margin-bottom:8px">→ رجوع</button>
     <h1>${esc(rec.fileName)}</h1>
-    <p><span class="pill p">${esc(prov)}</span> <span class="pill">${(s.wordCount||0).toLocaleString('ar-EG')} كلمة</span> <span class="pill">${s.readingTime||1} دقيقة قراءة</span></p>
+    <p><span class="pill p">${esc(prov)}</span> <span class="pill"><bdi>${(s.wordCount||0).toLocaleString('ar-EG')}</bdi> كلمة</span> <span class="pill"><bdi>${s.readingTime||1}</bdi> دقيقة قراءة</span></p>
   </div><div style="display:flex;gap:8px;flex-wrap:wrap">
     ${canDl?`<button class="btn btn-s" onclick="dlOrig('${rec.id}')">📎 الملف الأصلي</button>`:''}
     <button class="btn btn-s" onclick="copySum()">📋 نسخ</button>
@@ -395,9 +405,9 @@ async function loadStats(){
   const n = docs.length;
   const words = docs.reduce((s,d)=>s+(d.data().summary?.wordCount||0),0);
   $('#stats').innerHTML = `
-    <div class="feat"><div class="ic">📄</div><h3>${n}</h3><p>ملخصاتك</p></div>
-    <div class="feat"><div class="ic">📖</div><h3>${words.toLocaleString('ar-EG')}</h3><p>كلمات اتلخصت</p></div>
-    <div class="feat"><div class="ic">⏱️</div><h3>${Math.round(words/180)}</h3><p>دقائق مذاكرة وفّرتها</p></div>`;
+    <div class="feat"><div class="ic">📄</div><h3><bdi>${n}</bdi></h3><p>ملخصاتك</p></div>
+    <div class="feat"><div class="ic">📖</div><h3><bdi>${words.toLocaleString('ar-EG')}</bdi></h3><p>كلمات اتلخصت</p></div>
+    <div class="feat"><div class="ic">⏱️</div><h3><bdi>${Math.round(words/180)}</bdi></h3><p>دقائق مذاكرة وفّرتها</p></div>`;
   const recent = docs.slice(0,4);
   $('#recent').innerHTML = recent.length ? recent.map(rowHtml).join('') : `<div class="empty">لسه مفيش ملخصات. ارفع أول ملف ✨</div>`;
 }
@@ -407,7 +417,6 @@ window.openRec = async id => {
   if (d.exists()){ const x=d.data(); META[id]={fileId:x.fileId, fileName:x.fileName, fileDeleted:!!x.fileDeleted}; renderResult({id, ...x}); go('res'); }
 };
 
-// تنظيف تلقائي: الملفات اللي عدى عليها 6 شهور → نحذف الملف الأصلي من R2، والملخص يفضل
 async function lazyCleanup(docs){
   const old = docs.filter(d => { const x=d.data(); return !x.fileDeleted && x.fileId && ageDays(x) > RETENTION_DAYS; });
   if (!old.length) return;
@@ -426,7 +435,7 @@ async function loadLibrary(){
   $('#libList').innerHTML = docs.length ? docs.map(d=>{
     const x=d.data(); const canDl = x.fileId && !x.fileDeleted;
     return `<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
-      <div><b>${esc(x.fileName)}</b><br><small style="color:var(--muted)">${fmt(x.fileSize||0)} • ${esc(x.provider||'')} • ${(x.summary?.wordCount||0)} كلمة${x.fileDeleted?' • <span style="color:var(--warn)">الملف الأصلي اتحذف (الملخص لسه موجود)</span>':''}</small></div>
+      <div><b>${esc(x.fileName)}</b><br><small style="color:var(--muted)">${fmt(x.fileSize||0)} • ${esc(x.provider||'')} • <bdi>${(x.summary?.wordCount||0)}</bdi> كلمة${x.fileDeleted?' • <span style="color:var(--warn)">الملف الأصلي اتحذف (الملخص لسه موجود)</span>':''}</small></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-s" onclick="openRec('${d.id}')">فتح</button>
         ${canDl?`<button class="btn btn-g" onclick="dlOrig('${d.id}')">📎</button>`:''}
