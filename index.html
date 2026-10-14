@@ -79,14 +79,41 @@
   .term{padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2)}
   .term b{color:var(--primary);display:block;margin-bottom:4px}.term span{color:var(--muted);font-size:14px}
   .qa{display:grid;gap:10px;padding-inline-start:20px;line-height:1.9}
-  .fc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
-  .fc-i{border:1px solid var(--border);border-radius:16px;overflow:hidden;background:var(--surface)}
-  .fc-f{padding:12px;font-weight:800;background:var(--soft);color:var(--primary)}.fc-b{padding:12px;color:var(--muted)}
   .empty{text-align:center;padding:40px 20px;color:var(--muted)}
   .toast{position:fixed;top:18px;inset-inline-start:18px;z-index:300;display:grid;gap:10px}
   .tst{min-width:240px;max-width:340px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);animation:sd .25s}
   .tst.ok{border-color:rgba(16,185,129,.4)}.tst.err{border-color:rgba(244,63,94,.4)}.tst.warn{border-color:rgba(245,158,11,.4)}
   @keyframes sd{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  /* شاشة النتيجة الجديدة */
+  .tldr{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(14,165,233,.1));border:1px solid rgba(16,185,129,.25);border-radius:18px;padding:18px;margin-bottom:16px}
+  .tldr h4{margin:0 0 10px;color:#047857;font-size:16px;display:flex;align-items:center;gap:8px}
+  [data-theme=dark] .tldr h4{color:#34d399}
+  .tldr ul{margin:0;padding-inline-start:20px;line-height:2}
+  .tldr li{font-weight:600}
+  .rtabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:16px 0;-webkit-overflow-scrolling:touch}
+  .rtab{white-space:nowrap;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-weight:800;transition:.2s}
+  .rtab:hover{color:var(--text);border-color:var(--primary)}
+  .rtab.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .rpanel{display:none;animation:fadeIn .25s ease}
+  .rpanel.on{display:block}
+  .acc{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden}
+  .acc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:14px 16px;font-weight:800;font-size:16px;background:var(--surface2);transition:.2s}
+  .acc-head:hover{background:var(--soft)}
+  .acc-head .chev{transition:transform .3s;color:var(--muted);font-size:14px}
+  .acc.open .chev{transform:rotate(180deg)}
+  .acc-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+  .acc.open .acc-body{max-height:4000px}
+  .acc-body ul{margin:0;padding:14px 20px;line-height:2}
+  .acc-body li::marker{color:var(--primary);font-weight:800}
+  .fc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+  .flip{perspective:1000px;cursor:pointer}
+  .flip-in{position:relative;width:100%;min-height:140px;transition:transform .5s;transform-style:preserve-3d}
+  .flip.on .flip-in{transform:rotateY(180deg)}
+  .flip-f,.flip-b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.7}
+  .flip-f{background:var(--soft);color:var(--primary);font-weight:800;font-size:16px}
+  .flip-b{background:var(--surface);transform:rotateY(180deg);color:var(--text)}
+  .hint{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}
   @media(max-width:860px){
     .app{grid-template-columns:1fr}
     .side{position:fixed;bottom:0;left:0;right:0;top:auto;flex-direction:row;justify-content:space-around;align-items:center;border-inline-end:none;border-top:1px solid var(--border);padding:8px 6px;z-index:60;box-shadow:0 -4px 16px rgba(15,23,42,.06)}
@@ -130,11 +157,11 @@
     <h2>ليه ملخّصي؟</h2><p class="sub">مصمّم للطلاب العرب بالتحديد</p>
     <div class="grid3">
       <div class="feat"><div class="ic">🧠</div><h3>فهم حقيقي مش نسخ</h3><p>بيقرأ التسلسل ويفهم المحاضرة، مش بيكثّف جمل عشوائية. ملخص منظم بأقسام وعناوين.</p></div>
+      <div class="feat"><div class="ic">⚡</div><h3>زبدة في 15 ثانية</h3><p>كل ملخص بيبدأ بـ 3 نقاط سريعة تمسك أهم الأفكار قبل ما تقرأ التفاصيل.</p></div>
       <div class="feat"><div class="ic">🌐</div><h3>عربي + إنجليزي + لاتيني</h3><p>بيحافظ على المصطلحات العلمية زي ما هي، مثالي لمواد زي المورفولوجيا والكيمياء والطب.</p></div>
+      <div class="feat"><div class="ic">🗂️</div><h3>بطاقات تختبر نفسك</h3><p>بطاقات حفظ قابلة للقلب، تسأل نفسك قبل ما تشوف الإجابة، عشان المذاكرة تعلق.</p></div>
       <div class="feat"><div class="ic">💾</div><h3>ملفاتك بترجع لك</h3><p>ارفع المحاضرة، وبعدين افتحها أو حمّلها تاني في أي وقت من أي جهاز. مش بتضيع.</p></div>
-      <div class="feat"><div class="ic">❓</div><h3>أسئلة وبطاقات حفظ</h3><p>بيولّد أسئلة مراجعة وبطاقات حفظ تلقائيًا عشان تذاكر بذكاء قبل الامتحان.</p></div>
       <div class="feat"><div class="ic">🔒</div><h3>خصوصية وتحكم</h3><p>ملفاتك مربوطة بحسابك بس، وتقدر تحذفها في أي وقت. بياناتك ملكك.</p></div>
-      <div class="feat"><div class="ic">⚡</div><h3>سريع ومجاني</h3><p>نظام ذكي يوزّع الطلبات على أكتر من مزود ذكاء اصطناعي عشان الموقع عمره ما يوقف.</p></div>
     </div>
   </div></section>
 
@@ -143,7 +170,7 @@
     <div class="steps">
       <div class="step"><h3>ارفع ملفك</h3><p>اسحب المحاضرة أو اخترها من جهازك. حتى <bdi>30</bdi> ميجابايت.</p></div>
       <div class="step"><h3>الذكاء بيفهم</h3><p>النظام بيقرأ المحتوى وينظّمه في أقسام ونقاط ومصطلحات.</p></div>
-      <div class="step"><h3>ذاكر وحمّل</h3><p>راجع الملخص، احل الأسئلة، احفظ البطاقات، وحمّل الملخص أو الملف الأصلي.</p></div>
+      <div class="step"><h3>ذاكر وحمّل</h3><p>راجع الملخص، احل الأسئلة، اقلب البطاقات، وحمّل الملخص أو الملف الأصلي.</p></div>
     </div>
   </div></section>
 
@@ -314,16 +341,12 @@ function pick(f){
   $('#go').disabled = false;
 }
 
-// استدعاء الـ Worker مع توكن + تعامل واضح مع فشل الاتصال
 async function worker(path, opts={}) {
   const token = await currentUser.getIdToken();
   const h = Object.assign({}, opts.headers || {}, { 'Authorization': 'Bearer ' + token });
   let res;
-  try {
-    res = await fetch(WORKER_URL + path, { ...opts, headers: h });
-  } catch (e) {
-    throw new Error('تعذّر الاتصال بالخادم. اتأكد إنك مش على VPN وإن الإنترنت شغال، وجرّب تاني.');
-  }
+  try { res = await fetch(WORKER_URL + path, { ...opts, headers: h }); }
+  catch (e) { throw new Error('تعذّر الاتصال بالخادم. اتأكد إنك مش على VPN وإن الإنترنت شغال، وجرّب تاني.'); }
   return res;
 }
 
@@ -364,10 +387,13 @@ window.summarize = async () => {
   } catch (err) { console.error(err); toast(err.message || 'حصل خطأ، جرّب تاني','err'); go('upload'); }
 };
 
+window.toggleAcc = el => el.parentElement.classList.toggle('open');
+
 function renderResult(rec){
   const s = rec.summary || {};
   const prov = { gemini:'Gemini', deepseek:'DeepSeek', openrouter:'OpenRouter' }[rec.provider] || rec.provider;
   const canDl = rec.fileId && !rec.fileDeleted;
+  const tldr = (s.tldr && s.tldr.length) ? s.tldr.filter(Boolean) : [];
   let html = `<div class="head"><div>
     <button class="btn btn-g" onclick="go('lib')" style="margin-bottom:8px">→ رجوع</button>
     <h1>${esc(rec.fileName)}</h1>
@@ -377,13 +403,40 @@ function renderResult(rec){
     <button class="btn btn-s" onclick="copySum()">📋 نسخ</button>
     <button class="btn btn-s" onclick="dlSum()">⬇️ الملخص</button>
   </div></div>`;
-  if (s.title) html += `<div class="sec-block"><h4>📘 ${esc(s.title)}</h4></div>`;
-  if (s.overview) html += `<div class="sec-block"><h4>📌 خلاصة سريعة</h4><p>${esc(s.overview)}</p></div>`;
-  (s.sections||[]).forEach(sec => { html += `<div class="sec-block"><h4>${esc(sec.heading)}</h4><ul>${(sec.points||[]).map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div>`; });
-  if ((s.terms||[]).length) html += `<div class="sec-block"><h4>🔑 المصطلحات</h4><div class="terms">${s.terms.map(t=>`<div class="term"><b>${esc(t.term)}</b><span>${esc(t.definition)}</span></div>`).join('')}</div></div>`;
-  if ((s.questions||[]).length) html += `<div class="sec-block"><h4>❓ أسئلة مراجعة</h4><ol class="qa">${s.questions.map(q=>`<li>${esc(q)}</li>`).join('')}</ol></div>`;
-  if ((s.flashcards||[]).length) html += `<div class="sec-block"><h4>🗂️ بطاقات حفظ</h4><div class="fc">${s.flashcards.map(c=>`<div class="fc-i"><div class="fc-f">${esc(c.front)}</div><div class="fc-b">${esc(c.back)}</div></div>`).join('')}</div></div>`;
+  if (tldr.length) {
+    html += `<div class="tldr"><h4>⚡ اقرأ في 15 ثانية</h4><ul>${tldr.map(t=>`<li>${esc(t)}</li>`).join('')}</ul></div>`;
+  }
+  html += `<div class="rtabs">
+    <button class="rtab on" data-rt="sum">📄 الملخص</button>
+    <button class="rtab" data-rt="ter">🔑 المصطلحات</button>
+    <button class="rtab" data-rt="que">❓ الأسئلة</button>
+    <button class="rtab" data-rt="fla">🗂️ بطاقات</button>
+  </div>`;
+  html += `<div class="rpanel on" id="rp-sum">`;
+  if (s.overview) html += `<div class="sec-block"><h4>📌 نظرة عامة</h4><p>${esc(s.overview)}</p></div>`;
+  (s.sections||[]).forEach((sec,i)=>{
+    html += `<div class="acc ${i<2?'open':''}"><div class="acc-head" onclick="toggleAcc(this)"><span>${esc(sec.heading)}</span><span class="chev">▾</span></div><div class="acc-body"><ul>${(sec.points||[]).map(p=>`<li>${esc(p)}</li>`).join('')}</ul></div></div>`;
+  });
+  html += `</div>`;
+  html += `<div class="rpanel" id="rp-ter">`;
+  if ((s.terms||[]).length) html += `<div class="terms">${s.terms.map(t=>`<div class="term"><b>${esc(t.term)}</b><span>${esc(t.definition)}</span></div>`).join('')}</div>`;
+  else html += `<div class="empty">مفيش مصطلحات مستخرجة.</div>`;
+  html += `</div>`;
+  html += `<div class="rpanel" id="rp-que">`;
+  if ((s.questions||[]).length) html += `<ol class="qa">${s.questions.map(q=>`<li>${esc(q)}</li>`).join('')}</ol>`;
+  else html += `<div class="empty">مفيش أسئلة.</div>`;
+  html += `</div>`;
+  html += `<div class="rpanel" id="rp-fla">`;
+  if ((s.flashcards||[]).length) html += `<div class="fc">${s.flashcards.map(c=>`<div class="flip" onclick="this.classList.toggle('on')"><div class="flip-in"><div class="flip-f">${esc(c.front)}</div><div class="flip-b">${esc(c.back)}</div></div></div>`).join('')}</div><p class="hint">اضغط على البطاقة عشان تقلبها وتشوف الإجابة 🔄</p>`;
+  else html += `<div class="empty">مفيش بطاقات.</div>`;
+  html += `</div>`;
   $('#resBody').innerHTML = html;
+  $$('#resBody .rtab').forEach(b => b.addEventListener('click', () => {
+    $$('#resBody .rtab').forEach(x => x.classList.remove('on'));
+    $$('#resBody .rpanel').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    const p = $('#rp-' + b.dataset.rt); if (p) p.classList.add('on');
+  }));
   window._lastRec = rec;
 }
 window.copySum = async () => { const t = plain(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
@@ -396,7 +449,7 @@ window.dlOrig = async (docId) => {
     const blob = await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الملف الأصلي','ok');
   } catch(e){ toast(e.message,'err'); }
 };
-function plain(r){ const s=r.summary||{}; let o=`ملخص: ${r.fileName}\n\n${s.overview||''}\n\n`; (s.sections||[]).forEach(x=>{ o+=`## ${x.heading}\n`+(x.points||[]).map(p=>`- ${p}`).join('\n')+'\n\n'; }); (s.terms||[]).forEach(t=>o+=`- ${t.term}: ${t.definition}\n`); o+='\nأسئلة:\n'+(s.questions||[]).map((q,i)=>`${i+1}. ${q}`).join('\n'); return o; }
+function plain(r){ const s=r.summary||{}; let o=`ملخص: ${r.fileName}\n\n`; if(s.tldr&&s.tldr.length){o+='أهم 3 نقاط:\n'+s.tldr.map(t=>`- ${t}`).join('\n')+'\n\n';} o+=`${s.overview||''}\n\n`; (s.sections||[]).forEach(x=>{ o+=`## ${x.heading}\n`+(x.points||[]).map(p=>`- ${p}`).join('\n')+'\n\n'; }); (s.terms||[]).forEach(t=>o+=`- ${t.term}: ${t.definition}\n`); o+='\nأسئلة:\n'+(s.questions||[]).map((q,i)=>`${i+1}. ${q}`).join('\n'); return o; }
 
 async function loadStats(){
   const snap = await getDocs(query(collection(db,'summaries'), where('uid','==',currentUser.uid)));
