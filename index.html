@@ -205,6 +205,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <button class="nav-i on" data-v="dash" onclick="go('dash')">🏠<span>الرئيسية</span></button>
 <button class="nav-i" data-v="upload" onclick="go('upload')">⬆️<span>رفع</span></button>
 <button class="nav-i" data-v="lib" onclick="go('lib')">📚<span>مكتبتي</span></button>
+<button class="nav-i hidden" data-v="admin" id="navAdmin" onclick="go('admin')">🏛️<span>إدارة</span></button>
 <div class="side-foot"><span class="pill" id="sideEmail"></span></div>
 </aside>
 <main class="main">
@@ -247,6 +248,17 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="head"><div><h1>مكتبتي</h1><p>كل ملخصاتك وملفاتك في مكان واحد</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع</button></div>
 <div id="libList"></div>
 </section>
+<section id="v-admin" class="hidden">
+<div class="head"><div><h1>إدارة</h1><p>إنشاء الكليات والأقسام والمواد</p></div></div>
+<div class="card" style="margin-bottom:14px">
+<div class="head"><h1 style="font-size:18px">➕ كلية جديدة</h1></div>
+<div class="field"><label>اسم الكلية</label><input class="inp" id="cName" placeholder="مثال: طب الأسنان"></div>
+<div class="field"><label>الاختصار</label><input class="inp" id="cCode" placeholder="مثال: DENT"></div>
+<button class="btn btn-p" style="width:100%" onclick="createCollege()">أنشئ الكلية</button>
+</div>
+<div class="head"><h1 style="font-size:18px">🏛️ الكليات</h1></div>
+<div id="collegeList"></div>
+</section>
 </main>
 </div></div>
 <script type="module">
@@ -278,6 +290,35 @@ function toast(m,t=''){ const d=document.createElement('div'); d.className='tst 
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
 let currentUser=null, pickedFile=null, pickedURL=null;
 const META = {};
+let userRole = null;
+async function loadRole(){
+  if(!currentUser) return;
+  try {
+    const d = await getDoc(doc(db,'users',currentUser.uid));
+    userRole = d.exists() ? (d.data().role || 'student') : 'student';
+  } catch(e){ userRole = 'student'; }
+  const b = document.getElementById('navAdmin');
+  if(b) b.classList.toggle('hidden', userRole !== 'admin');
+  if(userRole === 'admin') loadColleges();
+}
+async function createCollege(){
+  const name = document.getElementById('cName').value.trim();
+  const code = document.getElementById('cCode').value.trim();
+  if(!name || !code) return toast('اكتب اسم الكلية والاختصار','warn');
+  try {
+    await addDoc(collection(db,'colleges'), { name, code, createdBy: currentUser.uid, admins:[currentUser.uid], createdAt: serverTimestamp() });
+    toast('اتنشأت الكلية 🎉','ok');
+    document.getElementById('cName').value=''; document.getElementById('cCode').value='';
+    loadColleges();
+  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+}
+async function loadColleges(){
+  const el = document.getElementById('collegeList');
+  if(!el) return;
+  const snap = await getDocs(collection(db,'colleges'));
+  const docs = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML = docs.length ? docs.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><span class="pill p">قسم ←</span></div>').join('') : '<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
+}
 window.openAuth = m => { $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth = () => $('#authModal').classList.add('hidden');
 window.setAuth = m => {
@@ -309,14 +350,14 @@ onAuthStateChanged(auth, u => {
     $('#navLinks').classList.add('hidden'); $('#navUser').classList.remove('hidden');
     $('#navEmail').textContent = u.email; $('#sideEmail').textContent = u.displayName || u.email;
     $('#welcome').textContent = 'أهلًا ' + (u.displayName || 'بيك') + ' 👋';
-    go('dash'); loadLibrary();
+    go('dash'); loadLibrary(); loadRole();
   } else {
     $('#landing').classList.remove('hidden'); $('#app').classList.add('hidden');
     $('#navLinks').classList.remove('hidden'); $('#navUser').classList.add('hidden');
   }
 });
 window.go = v => {
-  ['dash','upload','proc','res','lib'].forEach(x => $('#v-'+x).classList.toggle('hidden', x!==v));
+  ['dash','upload','proc','res','lib','admin'].forEach(x => $('#v-'+x).classList.toggle('hidden', x!==v));
   $$('.nav-i').forEach(b => b.classList.toggle('on', b.dataset.v===v));
   if (v==='dash') loadStats();
 };
