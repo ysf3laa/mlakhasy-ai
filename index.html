@@ -325,6 +325,12 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 </section>
 </main>
 </div></div>
+<div class="modal hidden" id="editModal"><div class="modal-card">
+<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px" id="editTitle">تعديل</h1><button class="btn btn-g" onclick="closeEdit()">✕</button></div>
+<div class="field"><label>الاسم</label><input class="inp" id="editF1"></div>
+<div class="field" id="editF2wrap"><label id="editL2">الاختصار</label><input class="inp" id="editF2"></div>
+<button class="btn btn-p" style="width:100%" onclick="saveEdit()">💾 احفظ</button>
+</div></div>
 <script type="module">
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDVSVBU-HIH4iLQbJuQ_XTCRXGr6SSKc3Y",
@@ -356,7 +362,7 @@ const META = {};
 let userRole=null, backTo='course', readOnly=false;
 let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
-
+let editType=null, editId=null, editFileId=null;
 async function loadRole(){
   if(!currentUser) return;
   try { const d = await getDoc(doc(db,'users',currentUser.uid)); userRole = d.exists() ? (d.data().role||'student') : 'student'; }
@@ -365,6 +371,46 @@ async function loadRole(){
   if(b) b.classList.toggle('hidden', userRole!=='admin');
   if(userRole==='admin') loadColleges();
 }
+function actions(type,id,fileId){
+  if(userRole!=='admin'||readOnly) return '';
+  const ff = fileId ? ",\'"+fileId+"\'" : "";
+  return '<button class="btn btn-g" onclick="editItem(\''+type+'\',\''+id+'\')">✏️</button><button class="btn btn-g" onclick="delItem(\''+type+'\',\''+id+'\''+ff+')">🗑️</button>';
+}
+window.editItem=(type,id)=>{
+  editType=type; editId=id; editFileId=null;
+  let item=null, f1='', f2='', l2='', show2=false, title='';
+  if(type==='college'){ item=COLLEGES.find(x=>x.id===id); f1=item.name; f2=item.code; l2='الاختصار'; show2=true; title='تعديل الكلية'; }
+  else if(type==='dept'){ item=DEPTS.find(x=>x.id===id); f1=item.name; f2=item.code; l2='الاختصار'; show2=true; title='تعديل القسم'; }
+  else if(type==='sem'){ item=SEMS.find(x=>x.id===id); f1=item.name; title='تعديل الفصل'; }
+  else if(type==='course'){ item=COURSES.find(x=>x.id===id); f1=item.name; f2=item.code; l2='كود المادة'; show2=true; title='تعديل المادة'; }
+  else if(type==='lecture'){ item=LECTURES.find(x=>x.id===id); f1=item.name; editFileId=item.fileId; title='تعديل المحاضرة'; }
+  if(!item) return;
+  $('#editTitle').textContent=title;
+  $('#editF1').value=f1;
+  $('#editL2').textContent=l2; $('#editF2').value=f2;
+  $('#editF2wrap').style.display=show2?'block':'none';
+  $('#editModal').classList.remove('hidden');
+};
+window.closeEdit=()=>$('#editModal').classList.add('hidden');
+window.saveEdit=async()=>{
+  const f1=$('#editF1').value.trim(), f2=$('#editF2').value.trim();
+  if(!f1) return toast('اكتب الاسم','warn');
+  const patch=(editType==='college'||editType==='dept'||editType==='course')?{name:f1,code:f2}:{name:f1};
+  const col=editType==='college'?'colleges':editType==='dept'?'departments':editType==='sem'?'semesters':editType==='course'?'courses':'lectures';
+  try{ await updateDoc(doc(db,col,editId),patch); toast('اتعدّل ✓','ok'); closeEdit();
+    if(editType==='college')loadColleges(); else if(editType==='dept')loadDepts(); else if(editType==='sem')loadSems(); else if(editType==='course')loadCourses(); else loadLectures();
+  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+};
+window.delItem=async(type,id,fileId)=>{
+  if(!confirm('متأكد إنك عايز تحذف ده؟')) return;
+  const col=type==='college'?'colleges':type==='dept'?'departments':type==='sem'?'semesters':type==='course'?'courses':'lectures';
+  try{
+    if(fileId){ try{ await worker('/file/'+fileId,{method:'DELETE'}); }catch{} }
+    await deleteDoc(doc(db,col,id));
+    toast('اتحذف ✓','ok');
+    if(type==='college')loadColleges(); else if(type==='dept')loadDepts(); else if(type==='sem')loadSems(); else if(type==='course')loadCourses(); else loadLectures();
+  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+};
 async function createCollege(){
   const name=$('#cName').value.trim(), code=$('#cCode').value.trim();
   if(!name||!code) return toast('اكتب اسم الكلية والاختصار','warn');
@@ -377,7 +423,7 @@ async function loadColleges(){
   const el=$('#collegeList'); if(!el) return;
   const snap=await getDocs(collection(db,'colleges'));
   COLLEGES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑 ولّد كود</button>')+'<button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button></div></div>').join(''):'<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
+  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>')+'<button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
 }
 window.openDept=(id)=>{ const c=COLLEGES.find(x=>x.id===id); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=false; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 async function createDept(){
@@ -391,7 +437,7 @@ async function loadDepts(){
   const el=$('#deptList'); if(!el||!currentCollege) return;
   const snap=await getDocs(query(collection(db,'departments'),where('collegeId','==',currentCollege.id)));
   DEPTS=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=DEPTS.length?DEPTS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openSem(\''+x.id+'\')">فصل ←</button></div>').join(''):'<div class="empty">مفيش أقسام لسه. أنشئ واحد فوق ☝️</div>';
+  el.innerHTML=DEPTS.length?DEPTS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openSem(\''+x.id+'\')">فصل ←</button>'+actions('dept',x.id)+'</div></div>').join(''):'<div class="empty">مفيش أقسام لسه. أنشئ واحد فوق ☝️</div>';
 }
 window.openSem=(id)=>{ const d=DEPTS.find(x=>x.id===id); if(!d)return; currentDept={id:d.id,name:d.name}; $('#semTitle').textContent='فصول '+d.name; go('sem'); };
 async function createSem(){
@@ -405,7 +451,7 @@ async function loadSems(){
   const el=$('#semList'); if(!el||!currentDept) return;
   const snap=await getDocs(query(collection(db,'semesters'),where('departmentId','==',currentDept.id)));
   SEMS=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=SEMS.length?SEMS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b></div><button class="btn btn-s" onclick="openCourse(\''+x.id+'\')">مادة ←</button></div>').join(''):'<div class="empty">مفيش فصول لسه. أنشئ واحد فوق ☝️</div>';
+  el.innerHTML=SEMS.length?SEMS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openCourse(\''+x.id+'\')">مادة ←</button>'+actions('sem',x.id)+'</div></div>').join(''):'<div class="empty">مفيش فصول لسه. أنشئ واحد فوق ☝️</div>';
 }
 window.openCourse=(id)=>{ const s=SEMS.find(x=>x.id===id); if(!s)return; currentSem={id:s.id,name:s.name}; $('#courseTitle').textContent='مواد '+s.name; go('course'); };
 async function createCourse(){
@@ -420,7 +466,7 @@ async function loadCourses(){
   const el=$('#courseList'); if(!el||!currentSem) return;
   const snap=await getDocs(query(collection(db,'courses'),where('semesterId','==',currentSem.id)));
   COURSES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
+  el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.code)+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button>'+actions('course',x.id)+'</div></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
 }
 window.openLecture=(id,from)=>{ const c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id); if(!c)return; currentCourse={id:c.id,name:c.name,code:c.code}; backTo=from||'course'; $('#lecTitle').textContent='محاضرات '+c.name; loadLectures(); go('lecture'); };
 async function createLecture(){
@@ -446,7 +492,7 @@ async function loadLectures(){
   const el=$('#lecList'); if(!el||!currentCourse) return;
   const snap=await getDocs(query(collection(db,'lectures'),where('courseId','==',currentCourse.id)));
   LECTURES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح الملخص</button></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
+  el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح</button>'+actions('lecture',x.id,x.fileId)+'</div></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
 }
 window.openLec=(id)=>{ const x=LECTURES.find(a=>a.id===id); if(!x)return; META[id]={fileId:null,fileName:x.name,fileDeleted:true}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,fileSize:0,fileId:null,fileDeleted:true}); go('res'); };
 window.joinByCode=async()=>{
@@ -473,10 +519,10 @@ async function loadMy(){
   } catch(e){ el.innerHTML='<div class="empty">خطأ: '+esc(e.message)+'</div>'; }
 }
 window.myCollege=(cid)=>{ const c=MY.find(x=>x.id===cid); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=true; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
-window.loadRole=loadRole; window.createCollege=createCollege; window.loadColleges=loadColleges;
+window.loadRole=loadRole; window.createCollege=createCollege; window.genCollegeCode=genCollegeCode; window.loadColleges=loadColleges;
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
-window.joinByCode=joinByCode; window.loadMy=loadMy;
+window.joinByCode=joinByCode; window.loadMy=loadMy; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth=()=>$('#authModal').classList.add('hidden');
 window.setAuth=m=>{ $('#tabLogin').classList.toggle('on',m==='login'); $('#tabReg').classList.toggle('on',m==='register'); $('#fName').classList.toggle('hidden',m==='login'); $('#aSubmit').textContent=m==='login'?'تسجيل الدخول':'إنشاء حساب'; $('#authForm').dataset.mode=m; };
@@ -512,6 +558,7 @@ window.go=v=>{
   if(v!=='proc'){ try{ history.pushState({v:v,ro:readOnly},'','#/'+v); }catch(e){} }
   applyView(v);
 };
+window.goBack=()=>history.back();
 window.addEventListener('popstate',e=>{
   const st=e.state||{};
   let v=st.v||'dash';
@@ -569,7 +616,7 @@ window.summarize=async()=>{
     go('res'); toast('الملخص جاهز 🎉','ok'); pickedFile=null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
   } catch(err){ toast(err.message||'حصل خطأ','err'); go('upload'); }
 };
-window.goBack=()=>history.back();
+window.toggleAcc=el=>el.parentElement.classList.toggle('open');
 function renderResult(rec){
   const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter'}[rec.provider]||rec.provider;
   const canDl=rec.fileId&&!rec.fileDeleted; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
