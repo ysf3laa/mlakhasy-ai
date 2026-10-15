@@ -319,6 +319,9 @@ async function loadColleges(){
   const docs = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
   el.innerHTML = docs.length ? docs.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><span class="pill p">قسم ←</span></div>').join('') : '<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
 }
+window.loadRole = loadRole;
+window.createCollege = createCollege;
+window.loadColleges = loadColleges;
 window.openAuth = m => { $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth = () => $('#authModal').classList.add('hidden');
 window.setAuth = m => {
