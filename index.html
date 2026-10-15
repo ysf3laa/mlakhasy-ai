@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>ملخّصي | درستك أسهل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<nav><div class="nav-in">
+<div class="logo"><div class="badge">✦</div> ملخّصي</div>
+<div style="margin-inline-start:auto;display:flex;gap:8px" id="navLinks">
+<button class="icon-btn" onclick="toggleTheme()">🌓</button>
+<button class="btn btn-s" onclick="openAuth('login')">دخول</button>
+<button class="btn btn-p" onclick="openAuth('register')">ابدأ مجانًا</button>
+</div>
+<div style="margin-inline-start:auto;display:none;gap:8px" id="navUser">
+<button class="icon-btn" onclick="toggleTheme()">🌓</button>
+<button class="icon-btn" onclick="openProfile()">👤</button>
+</div>
+</div></nav>
+
+<div id="landing">
+<header class="hero">
+<h1>حوّل محاضراتك إلى <span>ملخصات ذكية</span> جاهزة للمذاكرة</h1>
+<p>ارفع المحاضرة (ملف أو صورة أو نص)، واحصل على ملخص منظم + مصطلحات + أسئلة مراجعة — بالعربي والإنجليزي واللاتيني.</p>
+<div class="cta">
+<button class="btn btn-p" onclick="openAuth('register')">ابدأ مجانًا الآن</button>
+<button class="btn btn-s" onclick="openAuth('login')">عندي حساب</button>
+</div>
+</header>
+</div>
+
+<div class="modal hidden" id="authModal"><div class="modal-card">
+<div class="logo" style="margin-bottom:14px"><div class="badge">✦</div> ملخّصي</div>
+<div class="tabs"><button class="tab on" id="tabLogin" onclick="setAuth('login')">دخول</button><button class="tab" id="tabReg" onclick="setAuth('register')">حساب جديد</button></div>
+<form id="authForm">
+<div class="field hidden" id="fName"><label>الاسم</label><input class="inp" id="aName" placeholder="مثال: أحمد محمد"></div>
+<div class="field"><label>البريد الإلكتروني</label><input class="inp" id="aEmail" type="email" required placeholder="example@mail.com"></div>
+<div class="field"><label>كلمة المرور</label><input class="inp" id="aPass" type="password" required placeholder="••••••••"></div>
+<button class="btn btn-p" style="width:100%" id="aSubmit" type="submit">تسجيل الدخول</button>
+</form>
+<button class="btn btn-g" style="width:100%;margin-top:8px" onclick="closeAuth()">إلغاء</button>
+</div></div>
+
+<div class="modal hidden" id="profileModal"><div class="modal-card">
+<div class="head" style="margin-bottom:12px"><h1 style="font-size:19px">ملفي</h1><button class="icon-btn" onclick="closeProfile()">✕</button></div>
+<div class="chip" style="width:100%;margin:0 0 12px"><div style="width:44px;height:44px;border-radius:50%;background:var(--soft);color:var(--primary);display:grid;place-items:center;font-size:19px">👤</div><div><b id="pName"></b><br><small style="color:var(--muted)" id="pEmail"></small></div></div>
+<button class="btn btn-s" style="width:100%;margin-bottom:7px" onclick="toggleTheme()">🌓 تبديل الثيم</button>
+<button class="btn btn-s" style="width:100%;margin-bottom:7px" onclick="closeProfile();go('upload')">⬆️ ارفع ملف جديد</button>
+<button class="btn btn-s" style="width:100%;color:var(--err)" onclick="logout()">🚪 خروج</button>
+</div></div>
+
+<div id="app" class="hidden">
+<main class="main">
+<section id="v-dash">
+<div class="dash-hero"><div><h1 id="welcome">أهلًا 👋</h1><p>درستك أسهل — كل محاضراتك في مكان واحد</p></div><button class="icon-btn" onclick="soon('🔔 الإشعارات')">🔔</button></div>
+<div class="search"><span class="si">🔍</span><input id="q" placeholder="ابحث في ملخصاتك..." oninput="doSearch(this.value)"></div>
+<div class="promo"><div><h3>حالتك الجامعية أسهل ✨</h3><p>ارفع محاضرتك، واحصل على ملخص ذكي في ثواني.</p></div><button class="btn btn-p" onclick="go('upload')">ارفع الآن</button></div>
+<div class="quick" id="quick"></div>
+<div class="label">🏛️ أقسام الكلية</div>
+<div class="soon" onclick="soon('🏛️ أقسام الكلية')"><p>المواد والمحاضرات الجاهزة من دكاترتك.</p><span class="tag">قريبا</span></div>
+<div class="card" style="margin-top:16px"><div class="head"><h1 style="font-size:17px">آخر الملخصات</h1><button class="btn btn-g" onclick="go('lib')">الكل ←</button></div><div id="recent"></div></div>
+</section>
+<section id="v-upload" class="hidden">
+<div class="head"><div><h1>ارفع ملفك</h1><p>ملف أو صورة أو نص — حتى 30 ميجابايت</p></div></div>
+<div class="card" style="margin-bottom:14px">
+<label class="dz" id="dz"><input type="file" id="file" accept=".pdf,.txt,image/*" hidden><div class="big">📤</div><strong>اسحب الملف هنا أو اضغط للاختيار</strong><small>PDF · TXT · PNG · JPG · WEBP</small></label>
+<div id="picked"></div>
+</div>
+<div class="card">
+<div class="field"><label>نوع الملخص</label><select class="inp" id="sType"><option value="detailed">ملخص دراسي تفصيلي</option><option value="quick">ملخص سريع</option><option value="exam">أسئلة ومراجعة</option><option value="simple">شرح مبسّط</option></select></div>
+<div class="field"><label>لغة الإخراج</label><select class="inp" id="sLang"><option value="ar">عربي (مع المصطلحات الأجنبية)</option><option value="en">إنجليزي</option></select></div>
+<button class="btn btn-p" style="width:100%" id="goBtn" disabled onclick="summarize()">✨ ابدأ التلخيص</button>
+</div>
+</section>
+<section id="v-proc" class="hidden"><div class="card" style="max-width:640px;margin:20px auto"><div class="head"><h1 style="font-size:18px" id="procName">جارٍ المعالجة…</h1></div><div class="prog"><i id="bar"></i></div><p style="color:var(--muted);text-align:center" id="procMsg">بيرفع الملف ويفهم المحتوى…</p></div></section>
+<section id="v-res" class="hidden"><div id="resBody"></div></section>
+<section id="v-lib" class="hidden"><div class="head"><div><h1>مكتبتي</h1><p>كل ملخصاتك وملفاتك في مكان واحد</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع</button></div><div id="libList"></div></section>
+</main>
+<nav class="tabbar">
+<button class="on" data-v="dash" onclick="go('dash')"><span class="ti">🏠</span>الرئيسية</button>
+<button data-v="upload" onclick="go('upload')"><span class="ti">⬆️</span>رفع</button>
+<button data-v="lib" onclick="go('lib')"><span class="ti">📚</span>مكتبتي</button>
+<button data-v="profile" onclick="openProfile()"><span class="ti">👤</span>ملفي</button>
+</nav>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>
