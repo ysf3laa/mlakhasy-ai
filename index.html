@@ -492,7 +492,7 @@ onAuthStateChanged(auth,u=>{
   if(u){ $('#landing').classList.add('hidden'); $('#app').classList.remove('hidden'); $('#navLinks').classList.add('hidden'); $('#navUser').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; go('dash'); loadLibrary(); loadRole(); loadMy(); }
   else { $('#landing').classList.remove('hidden'); $('#app').classList.add('hidden'); $('#navLinks').classList.remove('hidden'); $('#navUser').classList.add('hidden'); }
 });
-window.go=v=>{
+function applyView(v){
   ['dash','upload','proc','res','lib','my','join','admin','dept','sem','course','lecture'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
   $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   const rf=readOnly?'none':'block';
@@ -506,7 +506,19 @@ window.go=v=>{
   if(v==='dept') loadDepts();
   if(v==='sem') loadSems();
   if(v==='course') loadCourses();
+}
+window.go=v=>{
+  if(v==='admin'&&userRole!=='admin'){ v='my'; }
+  try{ history.pushState({v:v,ro:readOnly},'','#/'+v); }catch(e){}
+  applyView(v);
 };
+window.addEventListener('popstate',e=>{
+  const st=e.state||{};
+  let v=st.v||'dash';
+  if(v==='admin'&&userRole!=='admin'){ v='my'; }
+  readOnly=!!st.ro;
+  applyView(v);
+});
 const dz=$('#dz'), fileInput=$('#file');
 ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on');}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on');}));
