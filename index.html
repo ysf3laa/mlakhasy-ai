@@ -133,6 +133,17 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 .tst.err{border-color:rgba(244,63,94,.4)}
 .tst.warn{border-color:rgba(245,158,11,.4)}
 @keyframes sd{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.tasks{position:fixed;inset-inline-start:14px;bottom:14px;z-index:80;display:grid;gap:8px;width:min(340px,calc(100% - 28px))}
+.tk{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow);display:grid;gap:7px;animation:sd .25s}
+.tk-top{display:flex;align-items:center;gap:8px}
+.tk-name{font-weight:800;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tk-st{font-size:11px;color:var(--muted)}
+.tk-bar{height:6px;border-radius:99px;background:var(--surface2);overflow:hidden}
+.tk-bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),#7c3aed);transition:width .3s}
+.tk-acts{display:flex;gap:6px}
+.tk-acts .btn{padding:6px 10px;font-size:12px}
+.tk.done .tk-bar>i{background:var(--ok)}
+.tk.err .tk-bar>i{background:var(--err)}
 @media(max-width:860px){
 .app{grid-template-columns:1fr}
 .side{position:fixed;bottom:0;left:0;right:0;top:auto;flex-direction:row;justify-content:space-around;align-items:center;border-inline-end:none;border-top:1px solid var(--border);padding:8px 6px;z-index:60;box-shadow:0 -4px 16px rgba(15,23,42,.06)}
@@ -141,11 +152,13 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 .main{padding:16px;padding-bottom:88px}
 .row2{grid-template-columns:1fr}
 .head{flex-direction:column;align-items:flex-start}
+.tasks{bottom:74px}
 }
 </style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
+<div class="tasks" id="tasks"></div>
 <nav><div class="wrap nav-in">
 <div class="logo"><div class="logo-badge">✦</div> ملخّصي</div>
 <div class="nav-links" id="navLinks">
@@ -237,7 +250,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <select class="inp" id="sLang"><option value="ar">عربي (مع المصطلحات الأجنبية)</option><option value="en">إنجليزي</option></select>
 </div>
 <button class="btn btn-p" style="width:100%" id="go" disabled onclick="summarize()">✨ ابدأ التلخيص</button>
-<p style="color:var(--muted);font-size:13px;margin-top:12px">الملف بيتخزن بأمان في حسابك، وتقدر ترجّع تاني تفتحه أو تحمّله. لو الخادم مشغول، جرّب بعد دقايق.</p>
+<p style="color:var(--muted);font-size:13px;margin-top:12px">الملف بيكمّل في الخلفية — تقدر تكمّل تصفح الموقع، وتلغي في أي وقت من الشريط تحت.</p>
 </div>
 </div>
 </section>
@@ -319,6 +332,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 </label>
 <div id="lpicked"></div>
 <button class="btn btn-p" style="width:100%;margin-top:14px" id="lgo" disabled onclick="createLecture()">✨ ارفع وتلخّص</button>
+<p style="color:var(--muted);font-size:13px;margin-top:10px">المحاضرة بتكمّل في الخلفية — تقدر تمشي في أي حتة، وتلغي من الشريط تحت.</p>
 </div>
 <div class="head"><h1 style="font-size:18px">🎬 المحاضرات</h1></div>
 <div id="lecList"></div>
@@ -363,6 +377,26 @@ let userRole=null, backTo='course', readOnly=false;
 let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
 let editType=null, editId=null, editFileId=null;
+const TASKS={}; let taskSeq=0;
+function renderTasks(){
+  const el=$('#tasks'); if(!el) return;
+  const list=Object.values(TASKS);
+  el.innerHTML=list.map(t=>{
+    const cls=t.status==='done'?'done':t.status==='error'?'err':'';
+    const ic=t.status==='done'?'✅':t.status==='error'?'⚠️':'⏳';
+    let acts='';
+    if(t.status==='active') acts='<button class="btn btn-s" onclick="cancelTask(\''+t.id+'\')">إلغاء</button>';
+    else if(t.status==='done') acts='<button class="btn btn-p" onclick="openTask(\''+t.id+'\')">فتح الملخص</button><button class="btn btn-g" onclick="dismissTask(\''+t.id+'\')">✕</button>';
+    else if(t.status==='error') acts='<button class="btn btn-s" onclick="dismissTask(\''+t.id+'\')">إخفاء</button>';
+    return '<div class="tk '+cls+'"><div class="tk-top"><span>'+ic+'</span><span class="tk-name">'+esc(t.name)+'</span></div><div class="tk-bar"><i style="width:'+t.progress+'%"></i></div><div class="tk-st">'+esc(t.msg)+'</div><div class="tk-acts">'+acts+'</div></div>';
+  }).join('');
+}
+window.cancelTask=id=>{ const t=TASKS[id]; if(!t||t.status!=='active') return; try{t.controller.abort();}catch{} if(t.fileId){ worker('/file/'+t.fileId,{method:'DELETE'}).catch(()=>{}); } delete TASKS[id]; renderTasks(); toast('اتلغى','warn'); };
+window.openTask=id=>{ const t=TASKS[id]; if(!t||t.status!=='done'||!t.rec) return; renderResult(t.rec); go('res'); };
+window.dismissTask=id=>{ delete TASKS[id]; renderTasks(); };
+function newTask(name){ const id='t'+(++taskSeq); TASKS[id]={id,name,status:'active',progress:5,msg:'بيرفع الملف…',controller:new AbortController(),fileId:null,rec:null,courseId:null}; renderTasks(); return TASKS[id]; }
+function updTask(t,p,m){ t.progress=p; t.msg=m; renderTasks(); }
+function failTask(t,err){ if(!TASKS[t.id]) return; if(err&&err.name==='AbortError') return; t.status='error'; t.progress=100; t.msg=(err&&err.message)||'حصل خطأ'; renderTasks(); if(t.fileId){ worker('/file/'+t.fileId,{method:'DELETE'}).catch(()=>{}); } }
 async function loadRole(){
   if(!currentUser) return;
   try { const d = await getDoc(doc(db,'users',currentUser.uid)); userRole = d.exists() ? (d.data().role||'student') : 'student'; }
@@ -474,19 +508,21 @@ async function createLecture(){
   if(!name) return toast('اكتب اسم المحاضرة','warn');
   if(!lecFile) return toast('اختر ملف الأول','warn');
   if(!currentCourse) return toast('مفيش مادة مختارة','err');
-  go('proc'); $('#procName').textContent=name; $('#bar').style.width='15%'; $('#procMsg').textContent='بيرفع الملف بأمان…';
+  const f=lecFile, cid=currentCourse.id; lecFile=null; $('#lpicked').innerHTML=''; $('#lgo').disabled=true; lfile.value=''; $('#lName').value='';
+  const t=newTask(name); t.courseId=cid;
   try {
-    const up=await worker('/file',{method:'PUT',headers:{'X-File-Name':encodeURIComponent(lecFile.name),'Content-Type':lecFile.type||'application/octet-stream'},body:lecFile});
+    const up=await worker('/file',{method:'PUT',signal:t.controller.signal,headers:{'X-File-Name':encodeURIComponent(f.name),'Content-Type':f.type||'application/octet-stream'},body:f});
     const upJ=await up.json(); if(!up.ok) throw new Error(upJ.message||'فشل رفع الملف');
-    const fileId=upJ.fileId; $('#bar').style.width='45%'; $('#procMsg').textContent='الذكاء بيفهم ويولّد الملخص…';
-    const su=await worker('/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId,lang:'ar',type:'detailed'})});
+    t.fileId=upJ.fileId; updTask(t,45,'الذكاء بيفهم ويولّد الملخص…');
+    const su=await worker('/summarize',{method:'POST',signal:t.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:upJ.fileId,lang:'ar',type:'detailed'})});
     const suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل التلخيص');
-    $('#bar').style.width='90%';
-    await addDoc(collection(db,'lectures'),{courseId:currentCourse.id,name,fileId,summary:suJ.summary,provider:suJ.provider,uploadedBy:currentUser.uid,createdAt:serverTimestamp()});
-    $('#bar').style.width='100%'; toast('المحاضرة اترفعت واتلخّصت 🎉','ok');
-    lecFile=null; $('#lpicked').innerHTML=''; $('#lgo').disabled=true; $('#lfile').value=''; $('#lName').value='';
-    loadLectures(); go('lecture');
-  } catch(err){ toast(err.message||'حصل خطأ','err'); go('lecture'); }
+    updTask(t,85,'بنسّج النتيجة…');
+    const docRef=await addDoc(collection(db,'lectures'),{courseId:cid,name,fileId:upJ.fileId,summary:suJ.summary,provider:suJ.provider,uploadedBy:currentUser.uid,createdAt:serverTimestamp()});
+    t.progress=100; t.status='done'; t.msg='المحاضرة جاهزة 🎉';
+    t.rec={id:docRef.id,fileName:name,summary:suJ.summary,provider:suJ.provider,fileSize:0,fileId:null,fileDeleted:true};
+    renderTasks(); toast('المحاضرة اترفعت واتلخّصت 🎉','ok');
+    if(currentCourse&&currentCourse.id===cid) loadLectures();
+  } catch(err){ failTask(t,err); }
 }
 async function loadLectures(){
   const el=$('#lecList'); if(!el||!currentCourse) return;
@@ -523,6 +559,7 @@ window.loadRole=loadRole; window.createCollege=createCollege; window.genCollegeC
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
 window.joinByCode=joinByCode; window.loadMy=loadMy; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
+window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth=()=>$('#authModal').classList.add('hidden');
 window.setAuth=m=>{ $('#tabLogin').classList.toggle('on',m==='login'); $('#tabReg').classList.toggle('on',m==='register'); $('#fName').classList.toggle('hidden',m==='login'); $('#aSubmit').textContent=m==='login'?'تسجيل الدخول':'إنشاء حساب'; $('#authForm').dataset.mode=m; };
@@ -597,24 +634,26 @@ function pickLec(f){
 async function worker(path,opts={}){
   const token=await currentUser.getIdToken();
   const h=Object.assign({},opts.headers||{},{'Authorization':'Bearer '+token});
-  let res; try{ res=await fetch(WORKER_URL+path,{...opts,headers:h}); }catch(e){ throw new Error('تعذّر الاتصال بالخادم. اقفل VPN وجرّب على Wi-Fi.'); }
+  let res; try{ res=await fetch(WORKER_URL+path,{...opts,headers:h}); }catch(e){ if(e&&e.name==='AbortError') throw e; throw new Error('تعذّر الاتصال بالخادم. اقفل VPN وجرّب على Wi-Fi.'); }
   return res;
 }
 window.summarize=async()=>{
   if(!pickedFile||!currentUser) return;
-  go('proc'); $('#procName').textContent=pickedFile.name; $('#bar').style.width='15%'; $('#procMsg').textContent='بيرفع الملف بأمان…';
+  const f=pickedFile, lang=$('#sLang').value, typ=$('#sType').value; pickedFile=null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
+  const t=newTask(f.name);
   try {
-    const up=await worker('/file',{method:'PUT',headers:{'X-File-Name':encodeURIComponent(pickedFile.name),'Content-Type':pickedFile.type||'application/octet-stream'},body:pickedFile});
+    const up=await worker('/file',{method:'PUT',signal:t.controller.signal,headers:{'X-File-Name':encodeURIComponent(f.name),'Content-Type':f.type||'application/octet-stream'},body:f});
     const upJ=await up.json(); if(!up.ok) throw new Error(upJ.message||'فشل رفع الملف');
-    const fileId=upJ.fileId; $('#bar').style.width='45%'; $('#procMsg').textContent='الذكاء بيفهم ويولّد الملخص…';
-    const su=await worker('/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId,lang:$('#sLang').value,type:$('#sType').value})});
+    t.fileId=upJ.fileId; updTask(t,45,'الذكاء بيفهم ويولّد الملخص…');
+    const su=await worker('/summarize',{method:'POST',signal:t.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:upJ.fileId,lang,type:typ})});
     const suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل التلخيص');
-    $('#bar').style.width='90%';
-    const docRef=await addDoc(collection(db,'summaries'),{uid:currentUser.uid,fileName:pickedFile.name,fileType:pickedFile.type,fileSize:pickedFile.size,fileId,provider:suJ.provider,summary:suJ.summary,fileDeleted:false,createdAt:serverTimestamp()});
-    $('#bar').style.width='100%'; META[docRef.id]={fileId,fileName:pickedFile.name,fileDeleted:false};
-    renderResult({id:docRef.id,fileName:pickedFile.name,summary:suJ.summary,provider:suJ.provider,fileSize:pickedFile.size,fileId,fileDeleted:false});
-    go('res'); toast('الملخص جاهز 🎉','ok'); pickedFile=null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
-  } catch(err){ toast(err.message||'حصل خطأ','err'); go('upload'); }
+    updTask(t,85,'بنسّج النتيجة…');
+    const docRef=await addDoc(collection(db,'summaries'),{uid:currentUser.uid,fileName:f.name,fileType:f.type,fileSize:f.size,fileId:upJ.fileId,provider:suJ.provider,summary:suJ.summary,fileDeleted:false,createdAt:serverTimestamp()});
+    t.progress=100; t.status='done'; t.msg='الملخص جاهز 🎉';
+    META[docRef.id]={fileId:upJ.fileId,fileName:f.name,fileDeleted:false};
+    t.rec={id:docRef.id,fileName:f.name,summary:suJ.summary,provider:suJ.provider,fileSize:f.size,fileId:upJ.fileId,fileDeleted:false};
+    renderTasks(); toast('الملخص جاهز 🎉','ok'); loadLibrary(); loadStats();
+  } catch(err){ failTask(t,err); }
 };
 window.toggleAcc=el=>el.parentElement.classList.toggle('open');
 function renderResult(rec){
