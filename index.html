@@ -209,6 +209,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <button class="nav-i on" data-v="dash" onclick="go('dash')">🏠<span>الرئيسية</span></button>
 <button class="nav-i" data-v="upload" onclick="go('upload')">⬆️<span>رفع</span></button>
 <button class="nav-i" data-v="lib" onclick="go('lib')">📚<span>مكتبتي</span></button>
+<button class="nav-i" data-v="my" onclick="go('my')">🎓<span>موادي</span></button>
 <button class="nav-i hidden" data-v="admin" id="navAdmin" onclick="go('admin')">🏛️<span>إدارة</span></button>
 <div class="side-foot"><span class="pill" id="sideEmail"></span></div>
 </aside>
@@ -252,6 +253,18 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="head"><div><h1>مكتبتي</h1><p>كل ملخصاتك وملفاتك في مكان واحد</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع</button></div>
 <div id="libList"></div>
 </section>
+<section id="v-my" class="hidden">
+<div class="head"><div><h1>موادي</h1><p>المواد اللي انضميت ليها</p></div><button class="btn btn-p" onclick="go('join')"> انضمام بكود</button></div>
+<div id="myList"></div>
+</section>
+<section id="v-join" class="hidden">
+<div class="head"><div><h1>انضمام لمادة</h1><p>اكتب كود المادة اللي الدكتور اداك ياه</p></div><button class="btn btn-s" onclick="go('my')">→ رجوع</button></div>
+<div class="card">
+<div class="field"><label>كود المادة</label><input class="inp" id="joinCode" placeholder="مثال: DENT-101"></div>
+<button class="btn btn-p" style="width:100%" onclick="joinByCode()">انضم للمادة</button>
+<p style="color:var(--muted);font-size:13px;margin-top:12px">الكود بيكون من الدكتور. بعد الانضمام، المحاضرات والملخصات بتظهر في "موادي".</p>
+</div>
+</section>
 <section id="v-admin" class="hidden">
 <div class="head"><div><h1>إدارة</h1><p>إنشاء الكليات والأقسام والمواد</p></div></div>
 <div class="card" style="margin-bottom:14px">
@@ -284,6 +297,32 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="head"><h1 style="font-size:18px">📅 الفصول</h1></div>
 <div id="semList"></div>
 </section>
+<section id="v-course" class="hidden">
+<div class="head"><div><h1 id="courseTitle">المواد</h1><p>مواد الفصل</p></div><button class="btn btn-s" onclick="go('sem')">→ رجوع للفصول</button></div>
+<div class="card" style="margin-bottom:14px">
+<div class="head"><h1 style="font-size:18px">➕ مادة جديدة</h1></div>
+<div class="field"><label>اسم المادة</label><input class="inp" id="coName" placeholder="مثال: المورفولوجيا"></div>
+<div class="field"><label>كود الانضمام (اختياري — بيتولّد لو فاضي)</label><input class="inp" id="coCode" placeholder="مثال: MORPH-101"></div>
+<button class="btn btn-p" style="width:100%" onclick="createCourse()">أنشئ المادة</button>
+</div>
+<div class="head"><h1 style="font-size:18px">📘 المواد</h1></div>
+<div id="courseList"></div>
+</section>
+<section id="v-lecture" class="hidden">
+<div class="head"><div><h1 id="lecTitle">المحاضرات</h1><p>محاضرات المادة</p></div><button class="btn btn-s" onclick="go(backTo)">→ رجوع</button></div>
+<div class="card" style="margin-bottom:14px" id="lecUploadCard">
+<div class="head"><h1 style="font-size:18px">➕ رفع محاضرة</h1></div>
+<div class="field"><label>اسم المحاضرة</label><input class="inp" id="lName" placeholder="مثال: محاضرة 1 - الهيكل العظمي"></div>
+<label class="dz" id="ldz" style="min-height:140px">
+<input type="file" id="lfile" accept=".pdf,.txt,image/*" hidden>
+<div class="big">📤</div><strong>اسحب الملف هنا أو اضغط للاختيار</strong><small>PDF · TXT · PNG · JPG · WEBP</small>
+</label>
+<div id="lpicked"></div>
+<button class="btn btn-p" style="width:100%;margin-top:14px" id="lgo" disabled onclick="createLecture()">✨ ارفع وتلخّص</button>
+</div>
+<div class="head"><h1 style="font-size:18px">🎬 المحاضرات</h1></div>
+<div id="lecList"></div>
+</section>
 </main>
 </div></div>
 <script type="module">
@@ -299,7 +338,7 @@ const WORKER_URL = "https://mlakhasy-ai.ysf-3laa.workers.dev";
 const MAX_MB = 30, RETENTION_DAYS = 180;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, getDoc, query, where, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, getDoc, setDoc, query, where, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -309,294 +348,249 @@ const esc = s => String(s??"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;'
 const fmt = b => b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
 const ts = d => d?.createdAt?.seconds || 0;
 const ageDays = d => (Date.now()/1000 - ts(d)) / 86400;
+const rid = () => Math.random().toString(36).slice(2,8).toUpperCase();
 function toast(m,t=''){ const d=document.createElement('div'); d.className='tst '+t; d.textContent=m; $('#toast').appendChild(d); setTimeout(()=>{d.style.opacity=0;setTimeout(()=>d.remove(),250)},3600); }
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
-let currentUser=null, pickedFile=null, pickedURL=null;
+let currentUser=null, pickedFile=null, pickedURL=null, lecFile=null, lecURL=null;
 const META = {};
-let userRole = null;
-let currentCollege = null;
-let currentDept = null;
-let COLLEGES = [];
-let DEPTS = [];
-let SEMS = [];
+let userRole = null, backTo = 'course';
+let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
+let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
+
 async function loadRole(){
   if(!currentUser) return;
-  try {
-    const d = await getDoc(doc(db,'users',currentUser.uid));
-    userRole = d.exists() ? (d.data().role || 'student') : 'student';
-  } catch(e){ userRole = 'student'; }
+  try { const d = await getDoc(doc(db,'users',currentUser.uid)); userRole = d.exists() ? (d.data().role||'student') : 'student'; }
+  catch(e){ userRole='student'; }
   const b = document.getElementById('navAdmin');
-  if(b) b.classList.toggle('hidden', userRole !== 'admin');
-  if(userRole === 'admin') loadColleges();
+  if(b) b.classList.toggle('hidden', userRole!=='admin');
+  if(userRole==='admin') loadColleges();
 }
 async function createCollege(){
-  const name = document.getElementById('cName').value.trim();
-  const code = document.getElementById('cCode').value.trim();
-  if(!name || !code) return toast('اكتب اسم الكلية والاختصار','warn');
-  try {
-    await addDoc(collection(db,'colleges'), { name, code, createdBy: currentUser.uid, admins:[currentUser.uid], createdAt: serverTimestamp() });
-    toast('اتنشأت الكلية 🎉','ok');
-    document.getElementById('cName').value=''; document.getElementById('cCode').value='';
-    loadColleges();
-  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+  const name=$('#cName').value.trim(), code=$('#cCode').value.trim();
+  if(!name||!code) return toast('اكتب اسم الكلية والاختصار','warn');
+  try { await addDoc(collection(db,'colleges'),{name,code,createdBy:currentUser.uid,admins:[currentUser.uid],createdAt:serverTimestamp()}); toast('اتنشأت الكلية 🎉','ok'); $('#cName').value=''; $('#cCode').value=''; loadColleges(); }
+  catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
 async function loadColleges(){
-  const el = document.getElementById('collegeList');
-  if(!el) return;
-  const snap = await getDocs(collection(db,'colleges'));
-  COLLEGES = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML = COLLEGES.length ? COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button></div>').join('') : '<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
+  const el=$('#collegeList'); if(!el) return;
+  const snap=await getDocs(collection(db,'colleges'));
+  COLLEGES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button></div>').join(''):'<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
 }
-window.openDept = (id) => {
-  const c = COLLEGES.find(x=>x.id===id);
-  if(!c) return;
-  currentCollege = { id: c.id, name: c.name };
-  document.getElementById('deptTitle').textContent = 'أقسام ' + c.name;
-  go('dept');
-};
+window.openDept=(id)=>{ const c=COLLEGES.find(x=>x.id===id); if(!c)return; currentCollege={id:c.id,name:c.name}; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 async function createDept(){
-  const name = document.getElementById('dName').value.trim();
-  const code = document.getElementById('dCode').value.trim();
-  if(!name || !code) return toast('اكتب اسم القسم والاختصار','warn');
+  const name=$('#dName').value.trim(), code=$('#dCode').value.trim();
+  if(!name||!code) return toast('اكتب اسم القسم والاختصار','warn');
   if(!currentCollege) return toast('مفيش كلية مختارة','err');
-  try {
-    await addDoc(collection(db,'departments'), { name, code, collegeId: currentCollege.id, createdBy: currentUser.uid, admins:[currentUser.uid], createdAt: serverTimestamp() });
-    toast('اتنشأ القسم 🎉','ok');
-    document.getElementById('dName').value=''; document.getElementById('dCode').value='';
-    loadDepts();
-  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+  try { await addDoc(collection(db,'departments'),{name,code,collegeId:currentCollege.id,createdBy:currentUser.uid,admins:[currentUser.uid],createdAt:serverTimestamp()}); toast('اتنشأ القسم 🎉','ok'); $('#dName').value=''; $('#dCode').value=''; loadDepts(); }
+  catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
 async function loadDepts(){
-  const el = document.getElementById('deptList');
-  if(!el || !currentCollege) return;
-  const snap = await getDocs(query(collection(db,'departments'), where('collegeId','==',currentCollege.id)));
-  DEPTS = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML = DEPTS.length ? DEPTS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openSem(\''+x.id+'\')">فصل ←</button></div>').join('') : '<div class="empty">مفيش أقسام لسه. أنشئ واحد فوق ☝️</div>';
+  const el=$('#deptList'); if(!el||!currentCollege) return;
+  const snap=await getDocs(query(collection(db,'departments'),where('collegeId','==',currentCollege.id)));
+  DEPTS=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML=DEPTS.length?DEPTS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openSem(\''+x.id+'\')">فصل ←</button></div>').join(''):'<div class="empty">مفيش أقسام لسه. أنشئ واحد فوق ☝️</div>';
 }
-window.openSem = (id) => {
-  const d = DEPTS.find(x=>x.id===id);
-  if(!d) return;
-  currentDept = { id: d.id, name: d.name };
-  document.getElementById('semTitle').textContent = 'فصول ' + d.name;
-  go('sem');
-};
+window.openSem=(id)=>{ const d=DEPTS.find(x=>x.id===id); if(!d)return; currentDept={id:d.id,name:d.name}; $('#semTitle').textContent='فصول '+d.name; go('sem'); };
 async function createSem(){
-  const name = document.getElementById('smName').value.trim();
+  const name=$('#smName').value.trim();
   if(!name) return toast('اكتب اسم الفصل','warn');
   if(!currentDept) return toast('مفيش قسم مختار','err');
-  try {
-    await addDoc(collection(db,'semesters'), { name, departmentId: currentDept.id, createdBy: currentUser.uid, admins:[currentUser.uid], createdAt: serverTimestamp() });
-    toast('اتنشأ الفصل 🎉','ok');
-    document.getElementById('smName').value='';
-    loadSems();
-  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+  try { await addDoc(collection(db,'semesters'),{name,departmentId:currentDept.id,collegeId:currentCollege.id,createdBy:currentUser.uid,admins:[currentUser.uid],createdAt:serverTimestamp()}); toast('اتنشأ الفصل 🎉','ok'); $('#smName').value=''; loadSems(); }
+  catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
 async function loadSems(){
-  const el = document.getElementById('semList');
-  if(!el || !currentDept) return;
-  const snap = await getDocs(query(collection(db,'semesters'), where('departmentId','==',currentDept.id)));
-  SEMS = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML = SEMS.length ? SEMS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b></div><span class="pill p">مادة ←</span></div>').join('') : '<div class="empty">مفيش فصول لسه. أنشئ واحد فوق ☝️</div>';
+  const el=$('#semList'); if(!el||!currentDept) return;
+  const snap=await getDocs(query(collection(db,'semesters'),where('departmentId','==',currentDept.id)));
+  SEMS=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML=SEMS.length?SEMS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b></div><button class="btn btn-s" onclick="openCourse(\''+x.id+'\')">مادة ←</button></div>').join(''):'<div class="empty">مفيش فصول لسه. أنشئ واحد فوق ☝️</div>';
 }
-window.loadRole = loadRole;
-window.createCollege = createCollege;
-window.loadColleges = loadColleges;
-window.createDept = createDept;
-window.loadDepts = loadDepts;
-window.createSem = createSem;
-window.loadSems = loadSems;
-window.openAuth = m => { $('#authModal').classList.remove('hidden'); setAuth(m); };
-window.closeAuth = () => $('#authModal').classList.add('hidden');
-window.setAuth = m => {
-  $('#tabLogin').classList.toggle('on', m==='login'); $('#tabReg').classList.toggle('on', m==='register');
-  $('#fName').classList.toggle('hidden', m==='login');
-  $('#aSubmit').textContent = m==='login' ? 'تسجيل الدخول' : 'إنشاء حساب';
-  $('#authForm').dataset.mode = m;
-};
-$('#authForm').addEventListener('submit', async e => {
-  e.preventDefault();
-  const mode = $('#authForm').dataset.mode || 'login';
-  const email = $('#aEmail').value.trim(), pass = $('#aPass').value, name = $('#aName').value.trim();
+window.openCourse=(id)=>{ const s=SEMS.find(x=>x.id===id); if(!s)return; currentSem={id:s.id,name:s.name}; $('#courseTitle').textContent='مواد '+s.name; go('course'); };
+async function createCourse(){
+  const name=$('#coName').value.trim(); let code=$('#coCode').value.trim().toUpperCase();
+  if(!name) return toast('اكتب اسم المادة','warn');
+  if(!code) code=(currentCollege?currentCollege.name.slice(0,4):'CRS').toUpperCase()+'-'+rid();
+  if(!currentSem) return toast('مفيش فصل مختار','err');
+  try { await addDoc(collection(db,'courses'),{name,code,semesterId:currentSem.id,departmentId:currentDept.id,collegeId:currentCollege.id,teachers:[currentUser.uid],createdBy:currentUser.uid,createdAt:serverTimestamp()}); toast('اتنشأت المادة 🎉 الكود: '+code,'ok'); $('#coName').value=''; $('#coCode').value=''; loadCourses(); }
+  catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+}
+async function loadCourses(){
+  const el=$('#courseList'); if(!el||!currentSem) return;
+  const snap=await getDocs(query(collection(db,'courses'),where('semesterId','==',currentSem.id)));
+  COURSES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
+}
+window.openLecture=(id,from)=>{ const c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id); if(!c)return; currentCourse={id:c.id,name:c.name,code:c.code}; backTo=from||'course'; $('#lecTitle').textContent='محاضرات '+c.name; const card=$('#lecUploadCard'); if(card) card.style.display=(userRole==='admin')?'block':'none'; loadLectures(); go('lecture'); };
+async function createLecture(){
+  const name=$('#lName').value.trim();
+  if(!name) return toast('اكتب اسم المحاضرة','warn');
+  if(!lecFile) return toast('اختر ملف الأول','warn');
+  if(!currentCourse) return toast('مفيش مادة مختارة','err');
+  go('proc'); $('#procName').textContent=name; $('#bar').style.width='15%'; $('#procMsg').textContent='بيرفع الملف بأمان…';
   try {
-    if (mode==='register') {
-      if (!name) return toast('اكتب اسمك','warn');
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      await updateProfile(cred.user, { displayName: name });
-      toast('تم إنشاء الحساب 🎉','ok');
-    } else { await signInWithEmailAndPassword(auth, email, pass); toast('أهلًا بيك','ok'); }
-    closeAuth();
-  } catch (err) { toast(trErr(err.code), 'err'); }
+    const up=await worker('/file',{method:'PUT',headers:{'X-File-Name':encodeURIComponent(lecFile.name),'Content-Type':lecFile.type||'application/octet-stream'},body:lecFile});
+    const upJ=await up.json(); if(!up.ok) throw new Error(upJ.message||'فشل رفع الملف');
+    const fileId=upJ.fileId; $('#bar').style.width='45%'; $('#procMsg').textContent='الذكاء بيفهم ويولّد الملخص…';
+    const su=await worker('/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId,lang:'ar',type:'detailed'})});
+    const suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل التلخيص');
+    $('#bar').style.width='90%';
+    await addDoc(collection(db,'lectures'),{courseId:currentCourse.id,name,fileId,summary:suJ.summary,provider:suJ.provider,uploadedBy:currentUser.uid,createdAt:serverTimestamp()});
+    $('#bar').style.width='100%'; toast('المحاضرة اترفعت واتلخّصت 🎉','ok');
+    lecFile=null; $('#lpicked').innerHTML=''; $('#lgo').disabled=true; $('#lfile').value=''; $('#lName').value='';
+    loadLectures(); go('lecture');
+  } catch(err){ toast(err.message||'حصل خطأ','err'); go('lecture'); }
+}
+async function loadLectures(){
+  const el=$('#lecList'); if(!el||!currentCourse) return;
+  const snap=await getDocs(query(collection(db,'lectures'),where('courseId','==',currentCourse.id)));
+  LECTURES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح الملخص</button></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
+}
+window.openLec=(id)=>{ const x=LECTURES.find(a=>a.id===id); if(!x)return; META[id]={fileId:x.fileId,fileName:x.name,fileDeleted:false}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,fileSize:0,fileId:x.fileId,fileDeleted:false}); go('res'); };
+window.joinByCode=async()=>{
+  const code=$('#joinCode').value.trim().toUpperCase();
+  if(!code) return toast('اكتب الكود','warn');
+  try {
+    const snap=await getDocs(query(collection(db,'courses'),where('code','==',code)));
+    if(snap.empty) return toast('مفيش مادة بالكود ده','err');
+    const c=snap.docs[0]; const data=c.data();
+    await setDoc(doc(db,'enrollments',c.id+'_'+currentUser.uid),{courseId:c.id,studentId:currentUser.uid,courseName:data.name,courseCode:data.code,createdAt:serverTimestamp()});
+    toast('انضميت لـ '+data.name+' 🎉','ok'); $('#joinCode').value=''; go('my'); loadMy();
+  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+};
+async function loadMy(){
+  const el=$('#myList'); if(!el) return;
+  const snap=await getDocs(query(collection(db,'enrollments'),where('studentId','==',currentUser.uid)));
+  MY=snap.docs.map(d=>({id:d.data().courseId,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML=MY.length?MY.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.courseName)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.courseCode)+'</small></div><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'my\')">محاضرات ←</button></div>').join(''):'<div class="empty">مفيش مواد لسه. دوس "انضمام بكود" فوق 🔑</div>';
+}
+window.loadRole=loadRole; window.createCollege=createCollege; window.loadColleges=loadColleges;
+window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
+window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
+window.joinByCode=joinByCode; window.loadMy=loadMy;
+window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
+window.closeAuth=()=>$('#authModal').classList.add('hidden');
+window.setAuth=m=>{ $('#tabLogin').classList.toggle('on',m==='login'); $('#tabReg').classList.toggle('on',m==='register'); $('#fName').classList.toggle('hidden',m==='login'); $('#aSubmit').textContent=m==='login'?'تسجيل الدخول':'إنشاء حساب'; $('#authForm').dataset.mode=m; };
+$('#authForm').addEventListener('submit',async e=>{
+  e.preventDefault(); const mode=$('#authForm').dataset.mode||'login'; const email=$('#aEmail').value.trim(),pass=$('#aPass').value,name=$('#aName').value.trim();
+  try { if(mode==='register'){ if(!name)return toast('اكتب اسمك','warn'); const cred=await createUserWithEmailAndPassword(auth,email,pass); await updateProfile(cred.user,{displayName:name}); toast('تم إنشاء الحساب 🎉','ok'); } else { await signInWithEmailAndPassword(auth,email,pass); toast('أهلًا بيك','ok'); } closeAuth(); }
+  catch(err){ toast(trErr(err.code),'err'); }
 });
 function trErr(c){ return {'auth/email-already-in-use':'البريد مسجّل بالفعل','auth/invalid-email':'بريد غير صحيح','auth/weak-password':'كلمة المرور ضعيفة (6 حروف+)','auth/user-not-found':'مفيش حساب بالبريد ده','auth/wrong-password':'كلمة المرور غلط','auth/too-many-requests':'محاولات كتير، استنى شوية','auth/operation-not-allowed':'فعّل Email/Password من Firebase Auth','auth/network-request-failed':'مفيش إنترنت، اتأكد من الشبكة'}[c]||'حصل خطأ: '+c; }
-window.logout = async () => { await signOut(auth); };
-onAuthStateChanged(auth, u => {
-  currentUser = u;
-  if (u) {
-    $('#landing').classList.add('hidden'); $('#app').classList.remove('hidden');
-    $('#navLinks').classList.add('hidden'); $('#navUser').classList.remove('hidden');
-    $('#navEmail').textContent = u.email; $('#sideEmail').textContent = u.displayName || u.email;
-    $('#welcome').textContent = 'أهلًا ' + (u.displayName || 'بيك') + ' 👋';
-    go('dash'); loadLibrary(); loadRole();
-  } else {
-    $('#landing').classList.remove('hidden'); $('#app').classList.add('hidden');
-    $('#navLinks').classList.remove('hidden'); $('#navUser').classList.add('hidden');
-  }
+window.logout=async()=>{ await signOut(auth); };
+onAuthStateChanged(auth,u=>{
+  currentUser=u;
+  if(u){ $('#landing').classList.add('hidden'); $('#app').classList.remove('hidden'); $('#navLinks').classList.add('hidden'); $('#navUser').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; go('dash'); loadLibrary(); loadRole(); loadMy(); }
+  else { $('#landing').classList.remove('hidden'); $('#app').classList.add('hidden'); $('#navLinks').classList.remove('hidden'); $('#navUser').classList.add('hidden'); }
 });
-window.go = v => {
-  ['dash','upload','proc','res','lib','admin','dept','sem'].forEach(x => $('#v-'+x).classList.toggle('hidden', x!==v));
-  $$('.nav-i').forEach(b => b.classList.toggle('on', b.dataset.v===v));
-  if (v==='dash') loadStats();
-  if (v==='admin') loadColleges();
-  if (v==='dept') loadDepts();
-  if (v==='sem') loadSems();
+window.go=v=>{
+  ['dash','upload','proc','res','lib','my','join','admin','dept','sem','course','lecture'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
+  $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(v==='dash') loadStats();
+  if(v==='my') loadMy();
+  if(v==='admin') loadColleges();
+  if(v==='dept') loadDepts();
+  if(v==='sem') loadSems();
+  if(v==='course') loadCourses();
 };
-const dz = $('#dz'), fileInput = $('#file');
-['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('on'); }));
-['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('on'); }));
-dz.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
-fileInput.addEventListener('change', e => pick(e.target.files[0]));
+const dz=$('#dz'), fileInput=$('#file');
+['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on');}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on');}));
+dz.addEventListener('drop',e=>pick(e.dataTransfer.files[0]));
+fileInput.addEventListener('change',e=>pick(e.target.files[0]));
 function pick(f){
-  if (!f) return;
-  if (f.size > MAX_MB*1024*1024) return toast('الملف أكبر من '+MAX_MB+' ميجابايت','err');
-  const ok = f.type==='application/pdf' || f.type==='text/plain' || f.type.startsWith('image/') || /\.(pdf|txt|png|jpe?g|webp)$/i.test(f.name);
-  if (!ok) return toast('نوع الملف غير مدعوم','err');
-  pickedFile = f;
-  if (pickedURL) URL.revokeObjectURL(pickedURL);
-  pickedURL = f.type.startsWith('image/') ? URL.createObjectURL(f) : null;
-  $('#picked').innerHTML = '<div class="chip">'+(pickedURL?'<img src="'+pickedURL+'" style="width:40px;height:40px;object-fit:cover;border-radius:10px">':'📄')+' <div><b>'+esc(f.name)+'</b><br><small style="color:var(--muted)">'+fmt(f.size)+'</small></div></div>';
-  $('#go').disabled = false;
+  if(!f) return;
+  if(f.size>MAX_MB*1024*1024) return toast('الملف أكبر من '+MAX_MB+' ميجابايت','err');
+  const ok=f.type==='application/pdf'||f.type==='text/plain'||f.type.startsWith('image/')||/\.(pdf|txt|png|jpe?g|webp)$/i.test(f.name);
+  if(!ok) return toast('نوع الملف غير مدعوم','err');
+  pickedFile=f; if(pickedURL)URL.revokeObjectURL(pickedURL); pickedURL=f.type.startsWith('image/')?URL.createObjectURL(f):null;
+  $('#picked').innerHTML='<div class="chip">'+(pickedURL?'<img src="'+pickedURL+'" style="width:40px;height:40px;object-fit:cover;border-radius:10px">':'📄')+' <div><b>'+esc(f.name)+'</b><br><small style="color:var(--muted)">'+fmt(f.size)+'</small></div></div>';
+  $('#go').disabled=false;
 }
-async function worker(path, opts={}) {
-  const token = await currentUser.getIdToken();
-  const h = Object.assign({}, opts.headers || {}, { 'Authorization': 'Bearer ' + token });
-  let res;
-  try { res = await fetch(WORKER_URL + path, { ...opts, headers: h }); }
-  catch (e) { throw new Error('تعذّر الاتصال بالخادم. اتأكد إنك مش على VPN وإن الإنترنت شغال، وجرّب تاني.'); }
+const ldz=$('#ldz'), lfile=$('#lfile');
+['dragenter','dragover'].forEach(ev=>ldz.addEventListener(ev,e=>{e.preventDefault();ldz.classList.add('on');}));
+['dragleave','drop'].forEach(ev=>ldz.addEventListener(ev,e=>{e.preventDefault();ldz.classList.remove('on');}));
+ldz.addEventListener('drop',e=>pickLec(e.dataTransfer.files[0]));
+lfile.addEventListener('change',e=>pickLec(e.target.files[0]));
+function pickLec(f){
+  if(!f) return;
+  if(f.size>MAX_MB*1024*1024) return toast('الملف أكبر من '+MAX_MB+' ميجابايت','err');
+  const ok=f.type==='application/pdf'||f.type==='text/plain'||f.type.startsWith('image/')||/\.(pdf|txt|png|jpe?g|webp)$/i.test(f.name);
+  if(!ok) return toast('نوع الملف غير مدعوم','err');
+  lecFile=f; if(lecURL)URL.revokeObjectURL(lecURL); lecURL=f.type.startsWith('image/')?URL.createObjectURL(f):null;
+  $('#lpicked').innerHTML='<div class="chip">'+(lecURL?'<img src="'+lecURL+'" style="width:40px;height:40px;object-fit:cover;border-radius:10px">':'📄')+' <div><b>'+esc(f.name)+'</b><br><small style="color:var(--muted)">'+fmt(f.size)+'</small></div></div>';
+  $('#lgo').disabled=false;
+}
+async function worker(path,opts={}){
+  const token=await currentUser.getIdToken();
+  const h=Object.assign({},opts.headers||{},{'Authorization':'Bearer '+token});
+  let res; try{ res=await fetch(WORKER_URL+path,{...opts,headers:h}); }catch(e){ throw new Error('تعذّر الاتصال بالخادم. اقفل VPN وجرّب على Wi-Fi.'); }
   return res;
 }
-window.summarize = async () => {
-  if (!pickedFile || !currentUser) return;
-  go('proc');
-  $('#procName').textContent = pickedFile.name;
-  $('#bar').style.width = '15%'; $('#procMsg').textContent = 'بيرفع الملف بأمان…';
+window.summarize=async()=>{
+  if(!pickedFile||!currentUser) return;
+  go('proc'); $('#procName').textContent=pickedFile.name; $('#bar').style.width='15%'; $('#procMsg').textContent='بيرفع الملف بأمان…';
   try {
-    const up = await worker('/file', { method: 'PUT', headers: { 'X-File-Name': encodeURIComponent(pickedFile.name), 'Content-Type': pickedFile.type || 'application/octet-stream' }, body: pickedFile });
-    const upJ = await up.json();
-    if (!up.ok) throw new Error(upJ.message || 'فشل رفع الملف');
-    const fileId = upJ.fileId;
-    $('#bar').style.width = '45%'; $('#procMsg').textContent = 'الملف اتخزن، والذكاء بيفهم ويولّد الملخص…';
-    const su = await worker('/summarize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId, lang: $('#sLang').value, type: $('#sType').value }) });
-    const suJ = await su.json();
-    if (!su.ok || suJ.error) throw new Error(suJ.message || 'فشل التلخيص');
-    $('#bar').style.width = '90%'; $('#procMsg').textContent = 'بنسّق النتيجة…';
-    const docRef = await addDoc(collection(db, 'summaries'), { uid: currentUser.uid, fileName: pickedFile.name, fileType: pickedFile.type, fileSize: pickedFile.size, fileId, provider: suJ.provider, summary: suJ.summary, fileDeleted: false, createdAt: serverTimestamp() });
-    $('#bar').style.width = '100%';
-    META[docRef.id] = { fileId, fileName: pickedFile.name, fileDeleted: false };
-    renderResult({ id: docRef.id, fileName: pickedFile.name, summary: suJ.summary, provider: suJ.provider, fileSize: pickedFile.size, fileId, fileDeleted: false });
-    go('res'); toast('الملخص جاهز 🎉','ok');
-    pickedFile = null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
-  } catch (err) { console.error(err); toast(err.message || 'حصل خطأ، جرّب تاني','err'); go('upload'); }
+    const up=await worker('/file',{method:'PUT',headers:{'X-File-Name':encodeURIComponent(pickedFile.name),'Content-Type':pickedFile.type||'application/octet-stream'},body:pickedFile});
+    const upJ=await up.json(); if(!up.ok) throw new Error(upJ.message||'فشل رفع الملف');
+    const fileId=upJ.fileId; $('#bar').style.width='45%'; $('#procMsg').textContent='الذكاء بيفهم ويولّد الملخص…';
+    const su=await worker('/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId,lang:$('#sLang').value,type:$('#sType').value})});
+    const suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل التلخيص');
+    $('#bar').style.width='90%';
+    const docRef=await addDoc(collection(db,'summaries'),{uid:currentUser.uid,fileName:pickedFile.name,fileType:pickedFile.type,fileSize:pickedFile.size,fileId,provider:suJ.provider,summary:suJ.summary,fileDeleted:false,createdAt:serverTimestamp()});
+    $('#bar').style.width='100%'; META[docRef.id]={fileId,fileName:pickedFile.name,fileDeleted:false};
+    renderResult({id:docRef.id,fileName:pickedFile.name,summary:suJ.summary,provider:suJ.provider,fileSize:pickedFile.size,fileId,fileDeleted:false});
+    go('res'); toast('الملخص جاهز 🎉','ok'); pickedFile=null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
+  } catch(err){ toast(err.message||'حصل خطأ','err'); go('upload'); }
 };
-window.toggleAcc = el => el.parentElement.classList.toggle('open');
+window.toggleAcc=el=>el.parentElement.classList.toggle('open');
 function renderResult(rec){
-  const s = rec.summary || {};
-  const prov = { gemini:'Gemini', deepseek:'DeepSeek', openrouter:'OpenRouter' }[rec.provider] || rec.provider;
-  const canDl = rec.fileId && !rec.fileDeleted;
-  const tldr = (s.tldr && s.tldr.length) ? s.tldr.filter(Boolean) : [];
-  let html = '<div class="head"><div>';
-  html += '<button class="btn btn-g" onclick="go(\'lib\')" style="margin-bottom:8px">→ رجوع</button>';
-  html += '<h1>'+esc(rec.fileName)+'</h1>';
-  html += '<p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p>';
-  html += '</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
-  if (canDl) html += '<button class="btn btn-s" onclick="dlOrig(\''+rec.id+'\')">📎 الملف الأصلي</button>';
-  html += '<button class="btn btn-s" onclick="copySum()">📋 نسخ</button>';
-  html += '<button class="btn btn-s" onclick="dlSum()">⬇️ الملخص</button>';
-  html += '</div></div>';
-  if (tldr.length) html += '<div class="tldr"><h4>⚡ اقرأ في 15 ثانية</h4><ul>'+tldr.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></div>';
-  html += '<div class="rtabs">';
-  html += '<button class="rtab on" data-rt="sum">📄 الملخص</button>';
-  html += '<button class="rtab" data-rt="ter">🔑 المصطلحات</button>';
-  html += '<button class="rtab" data-rt="que">❓ الأسئلة</button>';
-  html += '<button class="rtab" data-rt="fla">🗂️ بطاقات</button>';
-  html += '</div>';
-  html += '<div class="rpanel on" id="rp-sum">';
-  if (s.overview) html += '<div class="sec-block"><h4>📌 نظرة عامة</h4><p>'+esc(s.overview)+'</p></div>';
-  (s.sections||[]).forEach((sec,i)=>{
-    html += '<div class="acc '+(i<2?'open':'')+'"><div class="acc-head" onclick="toggleAcc(this)"><span>'+esc(sec.heading)+'</span><span class="chev">▾</span></div><div class="acc-body"><ul>'+(sec.points||[]).map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></div></div>';
-  });
-  html += '</div>';
-  html += '<div class="rpanel" id="rp-ter">';
-  html += (s.terms||[]).length ? '<div class="terms">'+s.terms.map(t=>'<div class="term"><b>'+esc(t.term)+'</b><span>'+esc(t.definition)+'</span></div>').join('')+'</div>' : '<div class="empty">مفيش مصطلحات.</div>';
-  html += '</div>';
-  html += '<div class="rpanel" id="rp-que">';
-  html += (s.questions||[]).length ? '<ol class="qa">'+s.questions.map(q=>'<li>'+esc(q)+'</li>').join('')+'</ol>' : '<div class="empty">مفيش أسئلة.</div>';
-  html += '</div>';
-  html += '<div class="rpanel" id="rp-fla">';
-  html += (s.flashcards||[]).length ? '<div class="fc">'+s.flashcards.map(c=>'<div class="flip" onclick="this.classList.toggle(\'on\')"><div class="flip-in"><div class="flip-f">'+esc(c.front)+'</div><div class="flip-b">'+esc(c.back)+'</div></div></div>').join('')+'</div><p class="hint">اضغط على البطاقة عشان تقلبها وتشوف الإجابة 🔄</p>' : '<div class="empty">مفيش بطاقات.</div>';
-  html += '</div>';
-  $('#resBody').innerHTML = html;
-  $$('#resBody .rtab').forEach(b => b.addEventListener('click', () => {
-    $$('#resBody .rtab').forEach(x => x.classList.remove('on'));
-    $$('#resBody .rpanel').forEach(x => x.classList.remove('on'));
-    b.classList.add('on');
-    const p = $('#rp-' + b.dataset.rt); if (p) p.classList.add('on');
-  }));
-  window._lastRec = rec;
+  const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter'}[rec.provider]||rec.provider;
+  const canDl=rec.fileId&&!rec.fileDeleted; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
+  let html='<div class="head"><div><button class="btn btn-g" onclick="go(\'lib\')" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  if(canDl) html+='<button class="btn btn-s" onclick="dlOrig(\''+rec.id+'\')">📎 الملف الأصلي</button>';
+  html+='<button class="btn btn-s" onclick="copySum()">📋 نسخ</button><button class="btn btn-s" onclick="dlSum()">⬇️ الملخص</button></div></div>';
+  if(tldr.length) html+='<div class="tldr"><h4>⚡ اقرأ في 15 ثانية</h4><ul>'+tldr.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></div>';
+  html+='<div class="rtabs"><button class="rtab on" data-rt="sum">📄 الملخص</button><button class="rtab" data-rt="ter">🔑 المصطلحات</button><button class="rtab" data-rt="que">❓ الأسئلة</button><button class="rtab" data-rt="fla">🗂️ بطاقات</button></div>';
+  html+='<div class="rpanel on" id="rp-sum">';
+  if(s.overview) html+='<div class="sec-block"><h4>📌 نظرة عامة</h4><p>'+esc(s.overview)+'</p></div>';
+  (s.sections||[]).forEach((sec,i)=>{ html+='<div class="acc '+(i<2?'open':'')+'"><div class="acc-head" onclick="toggleAcc(this)"><span>'+esc(sec.heading)+'</span><span class="chev">▾</span></div><div class="acc-body"><ul>'+(sec.points||[]).map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></div></div>'; });
+  html+='</div><div class="rpanel" id="rp-ter">'+((s.terms||[]).length?'<div class="terms">'+s.terms.map(t=>'<div class="term"><b>'+esc(t.term)+'</b><span>'+esc(t.definition)+'</span></div>').join('')+'</div>':'<div class="empty">مفيش مصطلحات.</div>')+'</div>';
+  html+='<div class="rpanel" id="rp-que">'+((s.questions||[]).length?'<ol class="qa">'+s.questions.map(q=>'<li>'+esc(q)+'</li>').join('')+'</ol>':'<div class="empty">مفيش أسئلة.</div>')+'</div>';
+  html+='<div class="rpanel" id="rp-fla">'+((s.flashcards||[]).length?'<div class="fc">'+s.flashcards.map(c=>'<div class="flip" onclick="this.classList.toggle(\'on\')"><div class="flip-in"><div class="flip-f">'+esc(c.front)+'</div><div class="flip-b">'+esc(c.back)+'</div></div></div>').join('')+'</div><p class="hint">اضغط على البطاقة عشان تقلبها 🔄</p>':'<div class="empty">مفيش بطاقات.</div>')+'</div>';
+  $('#resBody').innerHTML=html;
+  $$('#resBody .rtab').forEach(b=>b.addEventListener('click',()=>{ $$('#resBody .rtab').forEach(x=>x.classList.remove('on')); $$('#resBody .rpanel').forEach(x=>x.classList.remove('on')); b.classList.add('on'); const p=$('#rp-'+b.dataset.rt); if(p)p.classList.add('on'); }));
+  window._lastRec=rec;
 }
-window.copySum = async () => { const t = plain(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
-window.dlSum = () => { const t = plain(window._lastRec); const b = new Blob([t],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(window._lastRec.fileName.replace(/\.[^.]+$/,''))+'-ملخص.txt'; a.click(); toast('اتحمّل','ok'); };
-window.dlOrig = async (docId) => {
-  const m = META[docId]; if (!m || !m.fileId) return toast('الملف الأصلي مش متاح','err');
-  try {
-    const r = await worker('/file/'+m.fileId, { method: 'GET' });
-    if (!r.ok) throw new Error('الملف مش متاح');
-    const blob = await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الملف الأصلي','ok');
-  } catch(e){ toast(e.message,'err'); }
-};
+window.copySum=async()=>{ const t=plain(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
+window.dlSum=()=>{ const t=plain(window._lastRec); const b=new Blob([t],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(window._lastRec.fileName.replace(/\.[^.]+$/,''))+'-ملخص.txt'; a.click(); toast('اتحمّل','ok'); };
+window.dlOrig=async(docId)=>{ const m=META[docId]; if(!m||!m.fileId) return toast('الملف الأصلي مش متاح','err'); try{ const r=await worker('/file/'+m.fileId,{method:'GET'}); if(!r.ok) throw new Error('الملف مش متاح'); const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الأصلي','ok'); }catch(e){ toast(e.message,'err'); } };
 function plain(r){ const s=r.summary||{}; let o='ملخص: '+r.fileName+'\n\n'; if(s.tldr&&s.tldr.length){o+='أهم 3 نقاط:\n'+s.tldr.map(t=>'- '+t).join('\n')+'\n\n';} o+=(s.overview||'')+'\n\n'; (s.sections||[]).forEach(x=>{ o+='## '+x.heading+'\n'+(x.points||[]).map(p=>'- '+p).join('\n')+'\n\n'; }); (s.terms||[]).forEach(t=>o+='- '+t.term+': '+t.definition+'\n'); o+='\nأسئلة:\n'+(s.questions||[]).map((q,i)=>(i+1)+'. '+q).join('\n'); return o; }
 async function loadStats(){
-  const snap = await getDocs(query(collection(db,'summaries'), where('uid','==',currentUser.uid)));
-  const docs = snap.docs.sort((a,b)=>ts(b)-ts(a));
-  docs.forEach(d => { const x=d.data(); META[d.id]={fileId:x.fileId, fileName:x.fileName, fileDeleted:!!x.fileDeleted}; });
-  const n = docs.length;
-  const words = docs.reduce((s,d)=>s+(d.data().summary?.wordCount||0),0);
-  $('#stats').innerHTML = '<div class="feat"><div class="ic">📄</div><h3><bdi>'+n+'</bdi></h3><p>ملخصاتك</p></div><div class="feat"><div class="ic">📖</div><h3><bdi>'+words.toLocaleString('ar-EG')+'</bdi></h3><p>كلمات اتلخصت</p></div><div class="feat"><div class="ic">⏱️</div><h3><bdi>'+Math.round(words/180)+'</bdi></h3><p>دقائق مذاكرة وفّرتها</p></div>';
-  const recent = docs.slice(0,4);
-  $('#recent').innerHTML = recent.length ? recent.map(rowHtml).join('') : '<div class="empty">لسه مفيش ملخصات. ارفع أول ملف ✨</div>';
+  const snap=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid)));
+  const docs=snap.docs.sort((a,b)=>ts(b)-ts(a));
+  docs.forEach(d=>{ const x=d.data(); META[d.id]={fileId:x.fileId,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; });
+  const n=docs.length; const words=docs.reduce((s,d)=>s+(d.data().summary?.wordCount||0),0);
+  $('#stats').innerHTML='<div class="feat"><div class="ic">📄</div><h3><bdi>'+n+'</bdi></h3><p>ملخصاتك</p></div><div class="feat"><div class="ic">📖</div><h3><bdi>'+words.toLocaleString('ar-EG')+'</bdi></h3><p>كلمات اتلخصت</p></div><div class="feat"><div class="ic">⏱️</div><h3><bdi>'+Math.round(words/180)+'</bdi></h3><p>دقائق مذاكرة وفّرتها</p></div>';
+  const recent=docs.slice(0,4);
+  $('#recent').innerHTML=recent.length?recent.map(rowHtml).join(''):'<div class="empty">لسه مفيش ملخصات. ارفع أول ملف ✨</div>';
 }
 function rowHtml(d){ const x=d.data(); return '<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 10px"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+'</small></div><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button></div>'; }
-window.openRec = async id => {
-  const d = await getDoc(doc(db,'summaries',id));
-  if (d.exists()){ const x=d.data(); META[id]={fileId:x.fileId, fileName:x.fileName, fileDeleted:!!x.fileDeleted}; renderResult({id, ...x}); go('res'); }
-};
+window.openRec=async id=>{ const d=await getDoc(doc(db,'summaries',id)); if(d.exists()){ const x=d.data(); META[id]={fileId:x.fileId,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; renderResult({id,...x}); go('res'); } };
 async function lazyCleanup(docs){
-  const old = docs.filter(d => { const x=d.data(); return !x.fileDeleted && x.fileId && ageDays(x) > RETENTION_DAYS; });
-  if (!old.length) return;
-  await Promise.all(old.map(async d => {
-    try { await worker('/file/'+d.data().fileId, { method:'DELETE' }); } catch{}
-    try { await updateDoc(doc(db,'summaries',d.id), { fileDeleted:true }); } catch{}
-    if (META[d.id]) META[d.id].fileDeleted = true;
-  }));
+  const old=docs.filter(d=>{ const x=d.data(); return !x.fileDeleted&&x.fileId&&ageDays(x)>RETENTION_DAYS; });
+  if(!old.length) return;
+  await Promise.all(old.map(async d=>{ try{ await worker('/file/'+d.data().fileId,{method:'DELETE'}); }catch{} try{ await updateDoc(doc(db,'summaries',d.id),{fileDeleted:true}); }catch{} if(META[d.id])META[d.id].fileDeleted=true; }));
 }
 async function loadLibrary(){
-  const snap = await getDocs(query(collection(db,'summaries'), where('uid','==',currentUser.uid)));
-  const docs = snap.docs.sort((a,b)=>ts(b)-ts(a));
-  docs.forEach(d => { const x=d.data(); META[d.id]={fileId:x.fileId, fileName:x.fileName, fileDeleted:!!x.fileDeleted}; });
+  const snap=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid)));
+  const docs=snap.docs.sort((a,b)=>ts(b)-ts(a));
+  docs.forEach(d=>{ const x=d.data(); META[d.id]={fileId:x.fileId,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; });
   await lazyCleanup(docs);
-  $('#libList').innerHTML = docs.length ? docs.map(d=>{
-    const x=d.data(); const canDl = x.fileId && !x.fileDeleted;
-    return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+' • <bdi>'+(x.summary?.wordCount||0)+'</bdi> كلمة'+(x.fileDeleted?' • <span style="color:var(--warn)">الملف الأصلي اتحذف (الملخص لسه موجود)</span>':'')+'</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button>'+(canDl?'<button class="btn btn-g" onclick="dlOrig(\''+d.id+'\')">📎</button>':'')+'<button class="btn btn-g" onclick="delRec(\''+d.id+'\')">🗑️</button></div></div>';
-  }).join('') : '<div class="empty">مكتبتك فاضية. ارفع أول ملف 📤</div>';
+  $('#libList').innerHTML=docs.length?docs.map(d=>{ const x=d.data(); const canDl=x.fileId&&!x.fileDeleted; return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+' • <bdi>'+(x.summary?.wordCount||0)+'</bdi> كلمة'+(x.fileDeleted?' • <span style="color:var(--warn)">الأصلي اتحذف</span>':'')+'</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button>'+(canDl?'<button class="btn btn-g" onclick="dlOrig(\''+d.id+'\')">📎</button>':'')+'<button class="btn btn-g" onclick="delRec(\''+d.id+'\')">🗑️</button></div></div>'; }).join(''):'<div class="empty">مكتبتك فاضية. ارفع أول ملف 📤</div>';
 }
-window.delRec = async (id) => {
-  if (!confirm('تحذف الملخص ده؟ (الملف الأصلي كمان هيتحذف)')) return;
-  const m = META[id] || {};
-  try { await deleteDoc(doc(db,'summaries',id)); } catch{}
-  if (m.fileId) { try { await worker('/file/'+m.fileId, { method:'DELETE' }); } catch{} }
-  delete META[id];
-  toast('اتحذف','ok'); loadLibrary(); loadStats();
-};
-if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
+window.delRec=async(id)=>{ if(!confirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} if(m.fileId){ try{ await worker('/file/'+m.fileId,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
+if(matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
 </script>
 </body>
 </html>
