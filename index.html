@@ -254,15 +254,15 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div id="libList"></div>
 </section>
 <section id="v-my" class="hidden">
-<div class="head"><div><h1>موادي</h1><p>المواد اللي انضميت ليها</p></div><button class="btn btn-p" onclick="go('join')"> انضمام بكود</button></div>
+<div class="head"><div><h1>موادي</h1><p>الكليات اللي انضميت ليها</p></div><button class="btn btn-p" onclick="go('join')">🔑 انضمام بكود</button></div>
 <div id="myList"></div>
 </section>
 <section id="v-join" class="hidden">
-<div class="head"><div><h1>انضمام لمادة</h1><p>اكتب كود المادة اللي الدكتور اداك ياه</p></div><button class="btn btn-s" onclick="go('my')">→ رجوع</button></div>
+<div class="head"><div><h1>انضمام لكلية</h1><p>اكتب كود الكلية اللي الدكتور/العميد اداك ياه</p></div><button class="btn btn-s" onclick="go('my')">→ رجوع</button></div>
 <div class="card">
-<div class="field"><label>كود المادة</label><input class="inp" id="joinCode" placeholder="مثال: DENT-101"></div>
-<button class="btn btn-p" style="width:100%" onclick="joinByCode()">انضم للمادة</button>
-<p style="color:var(--muted);font-size:13px;margin-top:12px">الكود بيكون من الدكتور. بعد الانضمام، المحاضرات والملخصات بتظهر في "موادي".</p>
+<div class="field"><label>كود الكلية</label><input class="inp" id="joinCode" placeholder="مثال: CLG-A3F9K2"></div>
+<button class="btn btn-p" style="width:100%" onclick="joinByCode()">انضم للكلية</button>
+<p style="color:var(--muted);font-size:13px;margin-top:12px">الكود بيديك access لكل أقسام الكلية وفصولها وموادها ومحاضراتها.</p>
 </div>
 </section>
 <section id="v-admin" class="hidden">
@@ -278,7 +278,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 </section>
 <section id="v-dept" class="hidden">
 <div class="head"><div><h1 id="deptTitle">الأقسام</h1><p>أقسام الكلية</p></div><button class="btn btn-s" onclick="go('admin')">→ رجوع للكليات</button></div>
-<div class="card" style="margin-bottom:14px">
+<div class="card" style="margin-bottom:14px" id="dForm">
 <div class="head"><h1 style="font-size:18px">➕ قسم جديد</h1></div>
 <div class="field"><label>اسم القسم</label><input class="inp" id="dName" placeholder="مثال: العلاج التحفظي"></div>
 <div class="field"><label>الاختصار</label><input class="inp" id="dCode" placeholder="مثال: CONS"></div>
@@ -289,7 +289,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 </section>
 <section id="v-sem" class="hidden">
 <div class="head"><div><h1 id="semTitle">الفصول</h1><p>الفصول الدراسية للقسم</p></div><button class="btn btn-s" onclick="go('dept')">→ رجوع للأقسام</button></div>
-<div class="card" style="margin-bottom:14px">
+<div class="card" style="margin-bottom:14px" id="smForm">
 <div class="head"><h1 style="font-size:18px">➕ فصل جديد</h1></div>
 <div class="field"><label>اسم الفصل</label><input class="inp" id="smName" placeholder="مثال: الأول 2025/2026"></div>
 <button class="btn btn-p" style="width:100%" onclick="createSem()">أنشئ الفصل</button>
@@ -299,10 +299,10 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 </section>
 <section id="v-course" class="hidden">
 <div class="head"><div><h1 id="courseTitle">المواد</h1><p>مواد الفصل</p></div><button class="btn btn-s" onclick="go('sem')">→ رجوع للفصول</button></div>
-<div class="card" style="margin-bottom:14px">
+<div class="card" style="margin-bottom:14px" id="coForm">
 <div class="head"><h1 style="font-size:18px">➕ مادة جديدة</h1></div>
 <div class="field"><label>اسم المادة</label><input class="inp" id="coName" placeholder="مثال: المورفولوجيا"></div>
-<div class="field"><label>كود الانضمام (اختياري — بيتولّد لو فاضي)</label><input class="inp" id="coCode" placeholder="مثال: MORPH-101"></div>
+<div class="field"><label>كود المادة (اختياري — بيتولّد لو فاضي)</label><input class="inp" id="coCode" placeholder="مثال: MORPH-101"></div>
 <button class="btn btn-p" style="width:100%" onclick="createCourse()">أنشئ المادة</button>
 </div>
 <div class="head"><h1 style="font-size:18px">📘 المواد</h1></div>
@@ -338,7 +338,7 @@ const WORKER_URL = "https://mlakhasy-ai.ysf-3laa.workers.dev";
 const MAX_MB = 30, RETENTION_DAYS = 180;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, addDoc, getDocs, getDoc, setDoc, query, where, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, getDoc, setDoc, updateDoc, query, where, deleteDoc, doc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -353,7 +353,7 @@ function toast(m,t=''){ const d=document.createElement('div'); d.className='tst 
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
 let currentUser=null, pickedFile=null, pickedURL=null, lecFile=null, lecURL=null;
 const META = {};
-let userRole = null, backTo = 'course';
+let userRole=null, backTo='course', readOnly=false;
 let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
 
@@ -368,16 +368,18 @@ async function loadRole(){
 async function createCollege(){
   const name=$('#cName').value.trim(), code=$('#cCode').value.trim();
   if(!name||!code) return toast('اكتب اسم الكلية والاختصار','warn');
-  try { await addDoc(collection(db,'colleges'),{name,code,createdBy:currentUser.uid,admins:[currentUser.uid],createdAt:serverTimestamp()}); toast('اتنشأت الكلية 🎉','ok'); $('#cName').value=''; $('#cCode').value=''; loadColleges(); }
+  const inv='CLG-'+rid();
+  try { await addDoc(collection(db,'colleges'),{name,code,inviteCode:inv,createdBy:currentUser.uid,admins:[currentUser.uid],createdAt:serverTimestamp()}); toast('اتنشأت الكلية 🎉 كود الانضمام: '+inv,'ok'); $('#cName').value=''; $('#cCode').value=''; loadColleges(); }
   catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
+window.genCollegeCode=async(cid)=>{ const nc='CLG-'+rid(); try { await updateDoc(doc(db,'colleges',cid),{inviteCode:nc}); toast('الكود: '+nc,'ok'); loadColleges(); } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); } };
 async function loadColleges(){
   const el=$('#collegeList'); if(!el) return;
   const snap=await getDocs(collection(db,'colleges'));
   COLLEGES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button></div>').join(''):'<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
+  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑 ولّد كود</button>')+'<button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button></div></div>').join(''):'<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
 }
-window.openDept=(id)=>{ const c=COLLEGES.find(x=>x.id===id); if(!c)return; currentCollege={id:c.id,name:c.name}; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
+window.openDept=(id)=>{ const c=COLLEGES.find(x=>x.id===id); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=false; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 async function createDept(){
   const name=$('#dName').value.trim(), code=$('#dCode').value.trim();
   if(!name||!code) return toast('اكتب اسم القسم والاختصار','warn');
@@ -420,7 +422,7 @@ async function loadCourses(){
   COURSES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
   el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
 }
-window.openLecture=(id,from)=>{ const c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id); if(!c)return; currentCourse={id:c.id,name:c.name,code:c.code}; backTo=from||'course'; $('#lecTitle').textContent='محاضرات '+c.name; const card=$('#lecUploadCard'); if(card) card.style.display=(userRole==='admin')?'block':'none'; loadLectures(); go('lecture'); };
+window.openLecture=(id,from)=>{ const c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id); if(!c)return; currentCourse={id:c.id,name:c.name,code:c.code}; backTo=from||'course'; $('#lecTitle').textContent='محاضرات '+c.name; loadLectures(); go('lecture'); };
 async function createLecture(){
   const name=$('#lName').value.trim();
   if(!name) return toast('اكتب اسم المحاضرة','warn');
@@ -451,19 +453,26 @@ window.joinByCode=async()=>{
   const code=$('#joinCode').value.trim().toUpperCase();
   if(!code) return toast('اكتب الكود','warn');
   try {
-    const snap=await getDocs(query(collection(db,'courses'),where('code','==',code)));
-    if(snap.empty) return toast('مفيش مادة بالكود ده','err');
-    const c=snap.docs[0]; const data=c.data();
-    await setDoc(doc(db,'enrollments',c.id+'_'+currentUser.uid),{courseId:c.id,studentId:currentUser.uid,courseName:data.name,courseCode:data.code,createdAt:serverTimestamp()});
-    toast('انضميت لـ '+data.name+' 🎉','ok'); $('#joinCode').value=''; go('my'); loadMy();
+    const snap=await getDocs(query(collection(db,'colleges'),where('inviteCode','==',code)));
+    if(snap.empty) return toast('مفيش كلية بالكود ده','err');
+    const cid=snap.docs[0].id; const ref=doc(db,'org_roles',currentUser.uid); const ex=await getDoc(ref);
+    if(ex.exists()) await updateDoc(ref,{memberOf:arrayUnion(cid)});
+    else await setDoc(ref,{super:false,deansOf:[],headsOf:[],teacherOf:[],memberOf:[cid]});
+    toast('انضميت للكلية 🎉','ok'); $('#joinCode').value=''; go('my'); loadMy();
   } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 };
 async function loadMy(){
   const el=$('#myList'); if(!el) return;
-  const snap=await getDocs(query(collection(db,'enrollments'),where('studentId','==',currentUser.uid)));
-  MY=snap.docs.map(d=>({id:d.data().courseId,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=MY.length?MY.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.courseName)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.courseCode)+'</small></div><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'my\')">محاضرات ←</button></div>').join(''):'<div class="empty">مفيش مواد لسه. دوس "انضمام بكود" فوق 🔑</div>';
+  try {
+    const r=await getDoc(doc(db,'org_roles',currentUser.uid));
+    if(!r.exists()||!(r.data().memberOf||[]).length){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
+    const ids=r.data().memberOf;
+    const snap=await getDocs(query(collection(db,'colleges'),where('__name__','in',ids)));
+    MY=snap.docs.map(d=>({id:d.id,...d.data()}));
+    el.innerHTML=MY.length?MY.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="myCollege(\''+x.id+'\')">ادخل الكلية ←</button></div>').join(''):'<div class="empty">مفيش كليات.</div>';
+  } catch(e){ el.innerHTML='<div class="empty">خطأ: '+esc(e.message)+'</div>'; }
 }
+window.myCollege=(cid)=>{ const c=MY.find(x=>x.id===cid); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=true; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 window.loadRole=loadRole; window.createCollege=createCollege; window.loadColleges=loadColleges;
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
@@ -486,6 +495,11 @@ onAuthStateChanged(auth,u=>{
 window.go=v=>{
   ['dash','upload','proc','res','lib','my','join','admin','dept','sem','course','lecture'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
   $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  const rf=readOnly?'none':'block';
+  const df=$('#dForm'); if(df) df.style.display=rf;
+  const sf=$('#smForm'); if(sf) sf.style.display=rf;
+  const cf=$('#coForm'); if(cf) cf.style.display=rf;
+  const lf=$('#lecUploadCard'); if(lf) lf.style.display=(userRole==='admin'&&!readOnly)?'block':'none';
   if(v==='dash') loadStats();
   if(v==='my') loadMy();
   if(v==='admin') loadColleges();
