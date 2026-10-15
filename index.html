@@ -274,6 +274,16 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="head"><h1 style="font-size:18px">🧩 الأقسام</h1></div>
 <div id="deptList"></div>
 </section>
+<section id="v-sem" class="hidden">
+<div class="head"><div><h1 id="semTitle">الفصول</h1><p>الفصول الدراسية للقسم</p></div><button class="btn btn-s" onclick="go('dept')">→ رجوع للأقسام</button></div>
+<div class="card" style="margin-bottom:14px">
+<div class="head"><h1 style="font-size:18px">➕ فصل جديد</h1></div>
+<div class="field"><label>اسم الفصل</label><input class="inp" id="smName" placeholder="مثال: الأول 2025/2026"></div>
+<button class="btn btn-p" style="width:100%" onclick="createSem()">أنشئ الفصل</button>
+</div>
+<div class="head"><h1 style="font-size:18px">📅 الفصول</h1></div>
+<div id="semList"></div>
+</section>
 </main>
 </div></div>
 <script type="module">
@@ -287,11 +297,9 @@ const FIREBASE_CONFIG = {
 };
 const WORKER_URL = "https://mlakhasy-ai.ysf-3laa.workers.dev";
 const MAX_MB = 30, RETENTION_DAYS = 180;
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, getDoc, query, where, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db = getFirestore(app);
@@ -305,12 +313,12 @@ function toast(m,t=''){ const d=document.createElement('div'); d.className='tst 
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
 let currentUser=null, pickedFile=null, pickedURL=null;
 const META = {};
-
 let userRole = null;
 let currentCollege = null;
+let currentDept = null;
 let COLLEGES = [];
 let DEPTS = [];
-
+let SEMS = [];
 async function loadRole(){
   if(!currentUser) return;
   try {
@@ -363,13 +371,40 @@ async function loadDepts(){
   if(!el || !currentCollege) return;
   const snap = await getDocs(query(collection(db,'departments'), where('collegeId','==',currentCollege.id)));
   DEPTS = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML = DEPTS.length ? DEPTS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><span class="pill p">فصل ←</span></div>').join('') : '<div class="empty">مفيش أقسام لسه. أنشئ واحد فوق ☝️</div>';
+  el.innerHTML = DEPTS.length ? DEPTS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openSem(\''+x.id+'\')">فصل ←</button></div>').join('') : '<div class="empty">مفيش أقسام لسه. أنشئ واحد فوق ☝️</div>';
+}
+window.openSem = (id) => {
+  const d = DEPTS.find(x=>x.id===id);
+  if(!d) return;
+  currentDept = { id: d.id, name: d.name };
+  document.getElementById('semTitle').textContent = 'فصول ' + d.name;
+  go('sem');
+};
+async function createSem(){
+  const name = document.getElementById('smName').value.trim();
+  if(!name) return toast('اكتب اسم الفصل','warn');
+  if(!currentDept) return toast('مفيش قسم مختار','err');
+  try {
+    await addDoc(collection(db,'semesters'), { name, departmentId: currentDept.id, createdBy: currentUser.uid, admins:[currentUser.uid], createdAt: serverTimestamp() });
+    toast('اتنشأ الفصل 🎉','ok');
+    document.getElementById('smName').value='';
+    loadSems();
+  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+}
+async function loadSems(){
+  const el = document.getElementById('semList');
+  if(!el || !currentDept) return;
+  const snap = await getDocs(query(collection(db,'semesters'), where('departmentId','==',currentDept.id)));
+  SEMS = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML = SEMS.length ? SEMS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b></div><span class="pill p">مادة ←</span></div>').join('') : '<div class="empty">مفيش فصول لسه. أنشئ واحد فوق ☝️</div>';
 }
 window.loadRole = loadRole;
 window.createCollege = createCollege;
 window.loadColleges = loadColleges;
 window.createDept = createDept;
 window.loadDepts = loadDepts;
+window.createSem = createSem;
+window.loadSems = loadSems;
 window.openAuth = m => { $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth = () => $('#authModal').classList.add('hidden');
 window.setAuth = m => {
@@ -408,11 +443,12 @@ onAuthStateChanged(auth, u => {
   }
 });
 window.go = v => {
-  ['dash','upload','proc','res','lib','admin','dept'].forEach(x => $('#v-'+x).classList.toggle('hidden', x!==v));
+  ['dash','upload','proc','res','lib','admin','dept','sem'].forEach(x => $('#v-'+x).classList.toggle('hidden', x!==v));
   $$('.nav-i').forEach(b => b.classList.toggle('on', b.dataset.v===v));
   if (v==='dash') loadStats();
   if (v==='admin') loadColleges();
   if (v==='dept') loadDepts();
+  if (v==='sem') loadSems();
 };
 const dz = $('#dz'), fileInput = $('#file');
 ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('on'); }));
