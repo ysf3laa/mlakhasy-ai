@@ -1,41 +1,196 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>ملخّصي | درستك أسهل</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ملخّصي | لخّص محاضراتك بالذكاء الاصطناعي</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<style>
+:root{--bg:#f6f8fb;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--primary:#4f46e5;--primary-h:#4338ca;--soft:#eef2ff;--ok:#10b981;--warn:#f59e0b;--err:#f43f5e;--shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);--r:22px}
+[data-theme=dark]{--bg:#0b1120;--surface:#111827;--surface2:#0f172a;--border:#1f2937;--text:#f8fafc;--muted:#94a3b8;--primary:#6366f1;--primary-h:#818cf8;--soft:rgba(99,102,241,.14);--shadow:0 1px 2px rgba(0,0,0,.2),0 8px 24px rgba(0,0,0,.24)}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Tajawal",system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.7}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font-family:inherit}
+bdi{unicode-bidi:isolate}
+.hidden{display:none!important}
+.wrap{max-width:1100px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border)}
+.nav-in{display:flex;align-items:center;gap:12px;height:64px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px}
+.logo-badge{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,var(--primary),#7c3aed);color:#fff;display:grid;place-items:center;font-size:18px}
+.nav-links{margin-inline-start:auto;display:flex;align-items:center;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;cursor:pointer;padding:11px 18px;border-radius:14px;font-weight:800;transition:.2s;white-space:nowrap}
+.btn-p{background:var(--primary);color:#fff;box-shadow:0 8px 20px rgba(79,70,229,.18)}
+.btn-p:hover{background:var(--primary-h);transform:translateY(-1px)}
+.btn-s{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-s:hover{border-color:var(--primary);color:var(--primary)}
+.btn-g{background:transparent;color:var(--muted)}
+.btn-g:hover{background:var(--surface2);color:var(--text)}
+.btn:disabled{opacity:.55;cursor:not-allowed;transform:none!important}
+.btn-lg{padding:14px 26px;font-size:17px}
+.hero{padding:70px 0 50px;text-align:center;background:radial-gradient(circle at top,rgba(79,70,229,.12),transparent 40%)}
+.hero h1{font-size:clamp(30px,5vw,52px);line-height:1.2;margin:0 0 16px;font-weight:800}
+.hero h1 span{background:linear-gradient(135deg,var(--primary),#7c3aed);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--muted);font-size:19px;max-width:640px;margin:0 auto 28px}
+.hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.trust{margin-top:22px;color:var(--muted);font-size:14px;display:flex;gap:18px;justify-content:center;flex-wrap:wrap}
+.trust b{color:var(--text)}
+.sec{padding:56px 0}
+.sec h2{font-size:32px;text-align:center;margin:0 0 8px}
+.sec .sub{text-align:center;color:var(--muted);margin:0 0 36px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.feat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;box-shadow:var(--shadow);transition:.2s}
+.feat:hover{transform:translateY(-3px);box-shadow:0 14px 34px rgba(15,23,42,.09)}
+.feat .ic{width:48px;height:48px;border-radius:14px;background:var(--soft);color:var(--primary);display:grid;place-items:center;font-size:22px;margin-bottom:14px}
+.feat h3{margin:0 0 8px;font-size:19px}
+.feat p{margin:0;color:var(--muted);font-size:15px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:18px;counter-reset:s}
+.step{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;position:relative}
+.step::before{counter-increment:s;content:counter(s);position:absolute;top:-16px;inset-inline-start:24px;width:34px;height:34px;border-radius:50%;background:var(--primary);color:#fff;display:grid;place-items:center;font-weight:800}
+.step h3{margin:8px 0 6px;font-size:18px}
+.step p{margin:0;color:var(--muted);font-size:15px}
+.band{background:linear-gradient(135deg,var(--primary),#7c3aed);border-radius:var(--r);padding:44px 28px;text-align:center;color:#fff;margin:20px 0}
+.band h2{margin:0 0 10px;font-size:30px}
+.band p{margin:0 0 22px;opacity:.9}
+.band .btn-p{background:#fff;color:var(--primary)}
+.band .btn-p:hover{background:#f1f5f9}
+footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid var(--border);margin-top:40px}
+.modal{position:fixed;inset:0;background:rgba(2,6,23,.5);z-index:100;display:grid;place-items:center;padding:20px}
+.modal-card{width:min(440px,100%);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)}
+.tabs{display:flex;gap:8px;padding:6px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);margin-bottom:18px}
+.tab{flex:1;border:none;background:transparent;color:var(--muted);padding:10px;border-radius:10px;font-weight:800;cursor:pointer}
+.tab.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
+.field{margin-bottom:14px}
+.field label{display:block;margin-bottom:7px;font-weight:700;font-size:14px}
+.inp{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none}
+.inp:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--soft)}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 64px)}
+.side{background:var(--surface);border-inline-end:1px solid var(--border);padding:18px;display:flex;flex-direction:column;gap:8px}
+.side .nav-i{display:flex;align-items:center;gap:10px;padding:12px;border:none;border-radius:14px;background:transparent;color:var(--muted);font-weight:700;cursor:pointer;text-align:start;width:100%}
+.side .nav-i.on{background:var(--soft);color:var(--primary)}
+.side .nav-i:hover{background:var(--surface2);color:var(--text)}
+.side-foot{margin-top:auto}
+.main{padding:24px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:22px;box-shadow:var(--shadow)}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.head h1{margin:0;font-size:26px}
+.head p{margin:4px 0 0;color:var(--muted)}
+.dz{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:220px;border:2px dashed var(--border);border-radius:var(--r);background:var(--surface2);cursor:pointer;text-align:center;padding:24px;transition:.2s}
+.dz:hover,.dz.on{border-color:var(--primary);background:var(--soft)}
+.dz .big{font-size:40px}
+.dz strong{font-size:18px}
+.dz small{color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border);border-radius:14px;background:var(--surface);margin-top:14px}
+.row2{display:grid;grid-template-columns:1.2fr .8fr;gap:18px}
+.prog{height:10px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;margin:14px 0}
+.prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),#7c3aed);transition:width .4s}
+.pill{display:inline-flex;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:800;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.pill.p{background:var(--soft);color:var(--primary);border-color:transparent}
+.tldr{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(14,165,233,.1));border:1px solid rgba(16,185,129,.25);border-radius:18px;padding:18px;margin-bottom:16px}
+.tldr h4{margin:0 0 10px;color:#047857;font-size:16px;display:flex;align-items:center;gap:8px}
+[data-theme=dark] .tldr h4{color:#34d399}
+.tldr ul{margin:0;padding-inline-start:20px;line-height:2}
+.tldr li{font-weight:600}
+.rtabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin:16px 0;-webkit-overflow-scrolling:touch}
+.rtab{white-space:nowrap;padding:10px 16px;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;font-weight:800;transition:.2s}
+.rtab:hover{color:var(--text);border-color:var(--primary)}
+.rtab.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+.rpanel{display:none;animation:fi .25s ease}
+.rpanel.on{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.acc{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden}
+.acc-head{display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;padding:14px 16px;font-weight:800;font-size:16px;background:var(--surface2);transition:.2s}
+.acc-head:hover{background:var(--soft)}
+.acc-head .chev{transition:transform .3s;color:var(--muted);font-size:14px}
+.acc.open .chev{transform:rotate(180deg)}
+.acc-body{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.acc.open .acc-body{max-height:4000px}
+.acc-body ul{margin:0;padding:14px 20px;line-height:2}
+.acc-body li::marker{color:var(--primary);font-weight:800}
+.terms{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.term{padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface2)}
+.term b{color:var(--primary);display:block;margin-bottom:4px}
+.term span{color:var(--muted);font-size:14px}
+.qa{display:grid;gap:10px;padding-inline-start:20px;line-height:1.9}
+.fc{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.flip{perspective:1000px;cursor:pointer}
+.flip-in{position:relative;width:100%;min-height:140px;transition:transform .5s;transform-style:preserve-3d}
+.flip.on .flip-in{transform:rotateY(180deg)}
+.flip-f,.flip-b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.7}
+.flip-f{background:var(--soft);color:var(--primary);font-weight:800;font-size:16px}
+.flip-b{background:var(--surface);transform:rotateY(180deg)}
+.hint{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.toast{position:fixed;top:18px;inset-inline-start:18px;z-index:300;display:grid;gap:10px}
+.tst{min-width:240px;max-width:340px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow);animation:sd .25s}
+.tst.ok{border-color:rgba(16,185,129,.4)}
+.tst.err{border-color:rgba(244,63,94,.4)}
+.tst.warn{border-color:rgba(245,158,11,.4)}
+@keyframes sd{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@media(max-width:860px){
+.app{grid-template-columns:1fr}
+.side{position:fixed;bottom:0;left:0;right:0;top:auto;flex-direction:row;justify-content:space-around;align-items:center;border-inline-end:none;border-top:1px solid var(--border);padding:8px 6px;z-index:60;box-shadow:0 -4px 16px rgba(15,23,42,.06)}
+.side .nav-i{flex-direction:column;gap:3px;padding:6px 12px;font-size:12px;text-align:center;width:auto;border-radius:12px}
+.side-foot{display:none}
+.main{padding:16px;padding-bottom:88px}
+.row2{grid-template-columns:1fr}
+.head{flex-direction:column;align-items:flex-start}
+}
+</style>
 </head>
 <body>
 <div class="toast" id="toast"></div>
-<nav><div class="nav-in">
-<div class="logo"><div class="badge">✦</div> ملخّصي</div>
-<div style="margin-inline-start:auto;display:flex;gap:8px" id="navLinks">
-<button class="icon-btn" onclick="toggleTheme()">🌓</button>
+<nav><div class="wrap nav-in">
+<div class="logo"><div class="logo-badge">✦</div> ملخّصي</div>
+<div class="nav-links" id="navLinks">
+<button class="btn btn-g" onclick="toggleTheme()">🌓</button>
 <button class="btn btn-s" onclick="openAuth('login')">دخول</button>
 <button class="btn btn-p" onclick="openAuth('register')">ابدأ مجانًا</button>
 </div>
-<div style="margin-inline-start:auto;display:none;gap:8px" id="navUser">
-<button class="icon-btn" onclick="toggleTheme()">🌓</button>
-<button class="icon-btn" onclick="openProfile()">👤</button>
+<div class="nav-links hidden" id="navUser">
+<button class="btn btn-g" onclick="toggleTheme()">🌓</button>
+<span class="pill" id="navEmail"></span>
+<button class="btn btn-s" onclick="logout()">خروج</button>
 </div>
 </div></nav>
-
 <div id="landing">
-<header class="hero">
+<header class="hero"><div class="wrap">
 <h1>حوّل محاضراتك إلى <span>ملخصات ذكية</span> جاهزة للمذاكرة</h1>
-<p>ارفع المحاضرة (ملف أو صورة أو نص)، واحصل على ملخص منظم + مصطلحات + أسئلة مراجعة — بالعربي والإنجليزي واللاتيني.</p>
-<div class="cta">
-<button class="btn btn-p" onclick="openAuth('register')">ابدأ مجانًا الآن</button>
-<button class="btn btn-s" onclick="openAuth('login')">عندي حساب</button>
+<p>ارفع المحاضرة (ملف أو صورة أو نص)، واحصل على ملخص منظم، أهم نقاط، مصطلحات، وأسئلة مراجعة — بالعربي والإنجليزي واللاتيني.</p>
+<div class="hero-cta">
+<button class="btn btn-p btn-lg" onclick="openAuth('register')">ابدأ مجانًا الآن</button>
+<button class="btn btn-s btn-lg" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">ازاي بيشتغل؟</button>
 </div>
-</header>
+<div class="trust"><span>✓ <b>مجاني</b> بالكامل</span><span>✓ يدعم <b>العربي</b> بامتياز</span><span>✓ <b>ملفاتك محفوظة</b> وترجعها</span><span>✓ بدون بطاقة بنكية</span></div>
+</div></header>
+<section class="sec"><div class="wrap">
+<h2>ليه ملخّصي؟</h2><p class="sub">مصمّم للطلاب العرب بالتحديد</p>
+<div class="grid3">
+<div class="feat"><div class="ic">🧠</div><h3>فهم حقيقي مش نسخ</h3><p>بيقرأ التسلسل ويفهم المحاضرة، مش بيكثّف جمل عشوائية. ملخص منظم بأقسام وعناوين.</p></div>
+<div class="feat"><div class="ic">⚡</div><h3>زبدة في 15 ثانية</h3><p>كل ملخص بيبدأ بـ 3 نقاط سريعة تمسك أهم الأفكار قبل ما تقرأ التفاصيل.</p></div>
+<div class="feat"><div class="ic">🌐</div><h3>عربي + إنجليزي + لاتيني</h3><p>بيحافظ على المصطلحات العلمية زي ما هي، مثالي لمواد زي المورفولوجيا والكيمياء والطب.</p></div>
+<div class="feat"><div class="ic">🗂️</div><h3>بطاقات تختبر نفسك</h3><p>بطاقات حفظ قابلة للقلب، تسأل نفسك قبل ما تشوف الإجابة، عشان المذاكرة تعلق.</p></div>
+<div class="feat"><div class="ic">💾</div><h3>ملفاتك بترجع لك</h3><p>ارفع المحاضرة، وبعدين افتحها أو حمّلها تاني في أي وقت من أي جهاز. مش بتضيع.</p></div>
+<div class="feat"><div class="ic">🔒</div><h3>خصوصية وتحكم</h3><p>ملفاتك مربوطة بحسابك بس، وتقدر تحذفها في أي وقت. بياناتك ملكك.</p></div>
 </div>
-
+</div></section>
+<section class="sec" id="how" style="background:var(--surface2)"><div class="wrap">
+<h2>ازاي بيشتغل؟</h2><p class="sub">3 خطوات وبس</p>
+<div class="steps">
+<div class="step"><h3>ارفع ملفك</h3><p>اسحب المحاضرة أو اخترها من جهازك. حتى <bdi>30</bdi> ميجابايت.</p></div>
+<div class="step"><h3>الذكاء بيفهم</h3><p>النظام بيقرأ المحتوى وينظّمه في أقسام ونقاط ومصطلحات.</p></div>
+<div class="step"><h3>ذاكر وحمّل</h3><p>راجع الملخص، احل الأسئلة، اقلب البطاقات، وحمّل الملخص أو الملف الأصلي.</p></div>
+</div>
+</div></section>
+<section class="sec"><div class="wrap">
+<div class="band"><h2>جاهز تذاكر بذكاء؟</h2><p>أنشئ حسابك المجاني في ثواني وابدأ أول تلخيص دلوقتي.</p><button class="btn btn-p btn-lg" onclick="openAuth('register')">أنشئ حسابك مجانًا</button></div>
+</div></section>
+<footer><div class="wrap">ملخّصي © 2026 — منصة تلخيص ذكية للطلاب العرب. مصنوع بحب 🤍</div></footer>
+</div>
 <div class="modal hidden" id="authModal"><div class="modal-card">
-<div class="logo" style="margin-bottom:14px"><div class="badge">✦</div> ملخّصي</div>
+<div class="logo" style="margin-bottom:18px"><div class="logo-badge">✦</div> ملخّصي</div>
 <div class="tabs"><button class="tab on" id="tabLogin" onclick="setAuth('login')">دخول</button><button class="tab" id="tabReg" onclick="setAuth('register')">حساب جديد</button></div>
 <form id="authForm">
 <div class="field hidden" id="fName"><label>الاسم</label><input class="inp" id="aName" placeholder="مثال: أحمد محمد"></div>
@@ -43,51 +198,275 @@
 <div class="field"><label>كلمة المرور</label><input class="inp" id="aPass" type="password" required placeholder="••••••••"></div>
 <button class="btn btn-p" style="width:100%" id="aSubmit" type="submit">تسجيل الدخول</button>
 </form>
-<button class="btn btn-g" style="width:100%;margin-top:8px" onclick="closeAuth()">إلغاء</button>
+<button class="btn btn-g" style="width:100%;margin-top:10px" onclick="closeAuth()">إلغاء</button>
 </div></div>
-
-<div class="modal hidden" id="profileModal"><div class="modal-card">
-<div class="head" style="margin-bottom:12px"><h1 style="font-size:19px">ملفي</h1><button class="icon-btn" onclick="closeProfile()">✕</button></div>
-<div class="chip" style="width:100%;margin:0 0 12px"><div style="width:44px;height:44px;border-radius:50%;background:var(--soft);color:var(--primary);display:grid;place-items:center;font-size:19px">👤</div><div><b id="pName"></b><br><small style="color:var(--muted)" id="pEmail"></small></div></div>
-<button class="btn btn-s" style="width:100%;margin-bottom:7px" onclick="toggleTheme()">🌓 تبديل الثيم</button>
-<button class="btn btn-s" style="width:100%;margin-bottom:7px" onclick="closeProfile();go('upload')">⬆️ ارفع ملف جديد</button>
-<button class="btn btn-s" style="width:100%;color:var(--err)" onclick="logout()">🚪 خروج</button>
-</div></div>
-
-<div id="app" class="hidden">
+<div id="app" class="hidden"><div class="app">
+<aside class="side">
+<button class="nav-i on" data-v="dash" onclick="go('dash')">🏠<span>الرئيسية</span></button>
+<button class="nav-i" data-v="upload" onclick="go('upload')">⬆️<span>رفع</span></button>
+<button class="nav-i" data-v="lib" onclick="go('lib')">📚<span>مكتبتي</span></button>
+<div class="side-foot"><span class="pill" id="sideEmail"></span></div>
+</aside>
 <main class="main">
 <section id="v-dash">
-<div class="dash-hero"><div><h1 id="welcome">أهلًا 👋</h1><p>درستك أسهل — كل محاضراتك في مكان واحد</p></div><button class="icon-btn" onclick="soon('🔔 الإشعارات')">🔔</button></div>
-<div class="search"><span class="si">🔍</span><input id="q" placeholder="ابحث في ملخصاتك..." oninput="doSearch(this.value)"></div>
-<div class="promo"><div><h3>حالتك الجامعية أسهل ✨</h3><p>ارفع محاضرتك، واحصل على ملخص ذكي في ثواني.</p></div><button class="btn btn-p" onclick="go('upload')">ارفع الآن</button></div>
-<div class="quick" id="quick"></div>
-<div class="label">🏛️ أقسام الكلية</div>
-<div class="soon" onclick="soon('🏛️ أقسام الكلية')"><p>المواد والمحاضرات الجاهزة من دكاترتك.</p><span class="tag">قريبا</span></div>
-<div class="card" style="margin-top:16px"><div class="head"><h1 style="font-size:17px">آخر الملخصات</h1><button class="btn btn-g" onclick="go('lib')">الكل ←</button></div><div id="recent"></div></div>
+<div class="head"><div><h1 id="welcome">أهلًا 👋</h1><p>جاهز نلخّص محاضرتك الجاية؟</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع ملف</button></div>
+<div class="grid3" id="stats"></div>
+<div class="card" style="margin-top:18px"><div class="head"><h1 style="font-size:20px">آخر الملخصات</h1></div><div id="recent"></div></div>
 </section>
 <section id="v-upload" class="hidden">
-<div class="head"><div><h1>ارفع ملفك</h1><p>ملف أو صورة أو نص — حتى 30 ميجابايت</p></div></div>
-<div class="card" style="margin-bottom:14px">
-<label class="dz" id="dz"><input type="file" id="file" accept=".pdf,.txt,image/*" hidden><div class="big">📤</div><strong>اسحب الملف هنا أو اضغط للاختيار</strong><small>PDF · TXT · PNG · JPG · WEBP</small></label>
+<div class="head"><div><h1>ارفع ملفك</h1><p>ملف أو صورة أو نص — حتى <bdi>30</bdi> ميجابايت</p></div></div>
+<div class="row2">
+<div class="card">
+<label class="dz" id="dz">
+<input type="file" id="file" accept=".pdf,.txt,image/*" hidden>
+<div class="big">📤</div><strong>اسحب الملف هنا أو اضغط للاختيار</strong><small>PDF · TXT · PNG · JPG · WEBP</small>
+</label>
 <div id="picked"></div>
 </div>
 <div class="card">
-<div class="field"><label>نوع الملخص</label><select class="inp" id="sType"><option value="detailed">ملخص دراسي تفصيلي</option><option value="quick">ملخص سريع</option><option value="exam">أسئلة ومراجعة</option><option value="simple">شرح مبسّط</option></select></div>
-<div class="field"><label>لغة الإخراج</label><select class="inp" id="sLang"><option value="ar">عربي (مع المصطلحات الأجنبية)</option><option value="en">إنجليزي</option></select></div>
-<button class="btn btn-p" style="width:100%" id="goBtn" disabled onclick="summarize()">✨ ابدأ التلخيص</button>
+<div class="field"><label>نوع الملخص</label>
+<select class="inp" id="sType"><option value="detailed">ملخص دراسي تفصيلي</option><option value="quick">ملخص سريع</option><option value="exam">أسئلة ومراجعة</option><option value="simple">شرح مبسّط</option></select>
+</div>
+<div class="field"><label>لغة الإخراج</label>
+<select class="inp" id="sLang"><option value="ar">عربي (مع المصطلحات الأجنبية)</option><option value="en">إنجليزي</option></select>
+</div>
+<button class="btn btn-p" style="width:100%" id="go" disabled onclick="summarize()">✨ ابدأ التلخيص</button>
+<p style="color:var(--muted);font-size:13px;margin-top:12px">الملف بيتخزن بأمان في حسابك، وتقدر ترجّع تاني تفتحه أو تحمّله. لو الخادم مشغول، جرّب بعد دقايق.</p>
+</div>
 </div>
 </section>
-<section id="v-proc" class="hidden"><div class="card" style="max-width:640px;margin:20px auto"><div class="head"><h1 style="font-size:18px" id="procName">جارٍ المعالجة…</h1></div><div class="prog"><i id="bar"></i></div><p style="color:var(--muted);text-align:center" id="procMsg">بيرفع الملف ويفهم المحتوى…</p></div></section>
-<section id="v-res" class="hidden"><div id="resBody"></div></section>
-<section id="v-lib" class="hidden"><div class="head"><div><h1>مكتبتي</h1><p>كل ملخصاتك وملفاتك في مكان واحد</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع</button></div><div id="libList"></div></section>
-</main>
-<nav class="tabbar">
-<button class="on" data-v="dash" onclick="go('dash')"><span class="ti">🏠</span>الرئيسية</button>
-<button data-v="upload" onclick="go('upload')"><span class="ti">⬆️</span>رفع</button>
-<button data-v="lib" onclick="go('lib')"><span class="ti">📚</span>مكتبتي</button>
-<button data-v="profile" onclick="openProfile()"><span class="ti">👤</span>ملفي</button>
-</nav>
+<section id="v-proc" class="hidden">
+<div class="card" style="max-width:640px;margin:30px auto">
+<div class="head"><h1 style="font-size:20px" id="procName">جارٍ المعالجة…</h1></div>
+<div class="prog"><i id="bar"></i></div>
+<p style="color:var(--muted);text-align:center" id="procMsg">بيرفع الملف ويفهم المحتوى…</p>
 </div>
-<script type="module" src="app.js"></script>
+</section>
+<section id="v-res" class="hidden"><div id="resBody"></div></section>
+<section id="v-lib" class="hidden">
+<div class="head"><div><h1>مكتبتي</h1><p>كل ملخصاتك وملفاتك في مكان واحد</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع</button></div>
+<div id="libList"></div>
+</section>
+</main>
+</div></div>
+<script type="module">
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDVSVBU-HIH4iLQbJuQ_XTCRXGr6SSKc3Y",
+  authDomain: "mlakhasy-570a9.firebaseapp.com",
+  projectId: "mlakhasy-570a9",
+  storageBucket: "mlakhasy-570a9.firebasestorage.app",
+  messagingSenderId: "94902233455",
+  appId: "1:94902233455:web:7cd27d0da6d3615ba2209a"
+};
+const WORKER_URL = "https://mlakhasy-ai.ysf-3laa.workers.dev";
+const MAX_MB = 30, RETENTION_DAYS = 180;
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, getDoc, query, where, deleteDoc, doc, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const app = initializeApp(FIREBASE_CONFIG);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s??"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = b => b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
+const ts = d => d?.createdAt?.seconds || 0;
+const ageDays = d => (Date.now()/1000 - ts(d)) / 86400;
+function toast(m,t=''){ const d=document.createElement('div'); d.className='tst '+t; d.textContent=m; $('#toast').appendChild(d); setTimeout(()=>{d.style.opacity=0;setTimeout(()=>d.remove(),250)},3600); }
+window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
+let currentUser=null, pickedFile=null, pickedURL=null;
+const META = {};
+window.openAuth = m => { $('#authModal').classList.remove('hidden'); setAuth(m); };
+window.closeAuth = () => $('#authModal').classList.add('hidden');
+window.setAuth = m => {
+  $('#tabLogin').classList.toggle('on', m==='login'); $('#tabReg').classList.toggle('on', m==='register');
+  $('#fName').classList.toggle('hidden', m==='login');
+  $('#aSubmit').textContent = m==='login' ? 'تسجيل الدخول' : 'إنشاء حساب';
+  $('#authForm').dataset.mode = m;
+};
+$('#authForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const mode = $('#authForm').dataset.mode || 'login';
+  const email = $('#aEmail').value.trim(), pass = $('#aPass').value, name = $('#aName').value.trim();
+  try {
+    if (mode==='register') {
+      if (!name) return toast('اكتب اسمك','warn');
+      const cred = await createUserWithEmailAndPassword(auth, email, pass);
+      await updateProfile(cred.user, { displayName: name });
+      toast('تم إنشاء الحساب 🎉','ok');
+    } else { await signInWithEmailAndPassword(auth, email, pass); toast('أهلًا بيك','ok'); }
+    closeAuth();
+  } catch (err) { toast(trErr(err.code), 'err'); }
+});
+function trErr(c){ return {'auth/email-already-in-use':'البريد مسجّل بالفعل','auth/invalid-email':'بريد غير صحيح','auth/weak-password':'كلمة المرور ضعيفة (6 حروف+)','auth/user-not-found':'مفيش حساب بالبريد ده','auth/wrong-password':'كلمة المرور غلط','auth/too-many-requests':'محاولات كتير، استنى شوية','auth/operation-not-allowed':'فعّل Email/Password من Firebase Auth','auth/network-request-failed':'مفيش إنترنت، اتأكد من الشبكة'}[c]||'حصل خطأ: '+c; }
+window.logout = async () => { await signOut(auth); };
+onAuthStateChanged(auth, u => {
+  currentUser = u;
+  if (u) {
+    $('#landing').classList.add('hidden'); $('#app').classList.remove('hidden');
+    $('#navLinks').classList.add('hidden'); $('#navUser').classList.remove('hidden');
+    $('#navEmail').textContent = u.email; $('#sideEmail').textContent = u.displayName || u.email;
+    $('#welcome').textContent = 'أهلًا ' + (u.displayName || 'بيك') + ' 👋';
+    go('dash'); loadLibrary();
+  } else {
+    $('#landing').classList.remove('hidden'); $('#app').classList.add('hidden');
+    $('#navLinks').classList.remove('hidden'); $('#navUser').classList.add('hidden');
+  }
+});
+window.go = v => {
+  ['dash','upload','proc','res','lib'].forEach(x => $('#v-'+x).classList.toggle('hidden', x!==v));
+  $$('.nav-i').forEach(b => b.classList.toggle('on', b.dataset.v===v));
+  if (v==='dash') loadStats();
+};
+const dz = $('#dz'), fileInput = $('#file');
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('on'); }));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('on'); }));
+dz.addEventListener('drop', e => pick(e.dataTransfer.files[0]));
+fileInput.addEventListener('change', e => pick(e.target.files[0]));
+function pick(f){
+  if (!f) return;
+  if (f.size > MAX_MB*1024*1024) return toast('الملف أكبر من '+MAX_MB+' ميجابايت','err');
+  const ok = f.type==='application/pdf' || f.type==='text/plain' || f.type.startsWith('image/') || /\.(pdf|txt|png|jpe?g|webp)$/i.test(f.name);
+  if (!ok) return toast('نوع الملف غير مدعوم','err');
+  pickedFile = f;
+  if (pickedURL) URL.revokeObjectURL(pickedURL);
+  pickedURL = f.type.startsWith('image/') ? URL.createObjectURL(f) : null;
+  $('#picked').innerHTML = '<div class="chip">'+(pickedURL?'<img src="'+pickedURL+'" style="width:40px;height:40px;object-fit:cover;border-radius:10px">':'📄')+' <div><b>'+esc(f.name)+'</b><br><small style="color:var(--muted)">'+fmt(f.size)+'</small></div></div>';
+  $('#go').disabled = false;
+}
+async function worker(path, opts={}) {
+  const token = await currentUser.getIdToken();
+  const h = Object.assign({}, opts.headers || {}, { 'Authorization': 'Bearer ' + token });
+  let res;
+  try { res = await fetch(WORKER_URL + path, { ...opts, headers: h }); }
+  catch (e) { throw new Error('تعذّر الاتصال بالخادم. اتأكد إنك مش على VPN وإن الإنترنت شغال، وجرّب تاني.'); }
+  return res;
+}
+window.summarize = async () => {
+  if (!pickedFile || !currentUser) return;
+  go('proc');
+  $('#procName').textContent = pickedFile.name;
+  $('#bar').style.width = '15%'; $('#procMsg').textContent = 'بيرفع الملف بأمان…';
+  try {
+    const up = await worker('/file', { method: 'PUT', headers: { 'X-File-Name': encodeURIComponent(pickedFile.name), 'Content-Type': pickedFile.type || 'application/octet-stream' }, body: pickedFile });
+    const upJ = await up.json();
+    if (!up.ok) throw new Error(upJ.message || 'فشل رفع الملف');
+    const fileId = upJ.fileId;
+    $('#bar').style.width = '45%'; $('#procMsg').textContent = 'الملف اتخزن، والذكاء بيفهم ويولّد الملخص…';
+    const su = await worker('/summarize', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fileId, lang: $('#sLang').value, type: $('#sType').value }) });
+    const suJ = await su.json();
+    if (!su.ok || suJ.error) throw new Error(suJ.message || 'فشل التلخيص');
+    $('#bar').style.width = '90%'; $('#procMsg').textContent = 'بنسّق النتيجة…';
+    const docRef = await addDoc(collection(db, 'summaries'), { uid: currentUser.uid, fileName: pickedFile.name, fileType: pickedFile.type, fileSize: pickedFile.size, fileId, provider: suJ.provider, summary: suJ.summary, fileDeleted: false, createdAt: serverTimestamp() });
+    $('#bar').style.width = '100%';
+    META[docRef.id] = { fileId, fileName: pickedFile.name, fileDeleted: false };
+    renderResult({ id: docRef.id, fileName: pickedFile.name, summary: suJ.summary, provider: suJ.provider, fileSize: pickedFile.size, fileId, fileDeleted: false });
+    go('res'); toast('الملخص جاهز 🎉','ok');
+    pickedFile = null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
+  } catch (err) { console.error(err); toast(err.message || 'حصل خطأ، جرّب تاني','err'); go('upload'); }
+};
+window.toggleAcc = el => el.parentElement.classList.toggle('open');
+function renderResult(rec){
+  const s = rec.summary || {};
+  const prov = { gemini:'Gemini', deepseek:'DeepSeek', openrouter:'OpenRouter' }[rec.provider] || rec.provider;
+  const canDl = rec.fileId && !rec.fileDeleted;
+  const tldr = (s.tldr && s.tldr.length) ? s.tldr.filter(Boolean) : [];
+  let html = '<div class="head"><div>';
+  html += '<button class="btn btn-g" onclick="go(\'lib\')" style="margin-bottom:8px">→ رجوع</button>';
+  html += '<h1>'+esc(rec.fileName)+'</h1>';
+  html += '<p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p>';
+  html += '</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  if (canDl) html += '<button class="btn btn-s" onclick="dlOrig(\''+rec.id+'\')">📎 الملف الأصلي</button>';
+  html += '<button class="btn btn-s" onclick="copySum()">📋 نسخ</button>';
+  html += '<button class="btn btn-s" onclick="dlSum()">⬇️ الملخص</button>';
+  html += '</div></div>';
+  if (tldr.length) html += '<div class="tldr"><h4>⚡ اقرأ في 15 ثانية</h4><ul>'+tldr.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></div>';
+  html += '<div class="rtabs">';
+  html += '<button class="rtab on" data-rt="sum">📄 الملخص</button>';
+  html += '<button class="rtab" data-rt="ter">🔑 المصطلحات</button>';
+  html += '<button class="rtab" data-rt="que">❓ الأسئلة</button>';
+  html += '<button class="rtab" data-rt="fla">🗂️ بطاقات</button>';
+  html += '</div>';
+  html += '<div class="rpanel on" id="rp-sum">';
+  if (s.overview) html += '<div class="sec-block"><h4>📌 نظرة عامة</h4><p>'+esc(s.overview)+'</p></div>';
+  (s.sections||[]).forEach((sec,i)=>{
+    html += '<div class="acc '+(i<2?'open':'')+'"><div class="acc-head" onclick="toggleAcc(this)"><span>'+esc(sec.heading)+'</span><span class="chev">▾</span></div><div class="acc-body"><ul>'+(sec.points||[]).map(p=>'<li>'+esc(p)+'</li>').join('')+'</ul></div></div>';
+  });
+  html += '</div>';
+  html += '<div class="rpanel" id="rp-ter">';
+  html += (s.terms||[]).length ? '<div class="terms">'+s.terms.map(t=>'<div class="term"><b>'+esc(t.term)+'</b><span>'+esc(t.definition)+'</span></div>').join('')+'</div>' : '<div class="empty">مفيش مصطلحات.</div>';
+  html += '</div>';
+  html += '<div class="rpanel" id="rp-que">';
+  html += (s.questions||[]).length ? '<ol class="qa">'+s.questions.map(q=>'<li>'+esc(q)+'</li>').join('')+'</ol>' : '<div class="empty">مفيش أسئلة.</div>';
+  html += '</div>';
+  html += '<div class="rpanel" id="rp-fla">';
+  html += (s.flashcards||[]).length ? '<div class="fc">'+s.flashcards.map(c=>'<div class="flip" onclick="this.classList.toggle(\'on\')"><div class="flip-in"><div class="flip-f">'+esc(c.front)+'</div><div class="flip-b">'+esc(c.back)+'</div></div></div>').join('')+'</div><p class="hint">اضغط على البطاقة عشان تقلبها وتشوف الإجابة 🔄</p>' : '<div class="empty">مفيش بطاقات.</div>';
+  html += '</div>';
+  $('#resBody').innerHTML = html;
+  $$('#resBody .rtab').forEach(b => b.addEventListener('click', () => {
+    $$('#resBody .rtab').forEach(x => x.classList.remove('on'));
+    $$('#resBody .rpanel').forEach(x => x.classList.remove('on'));
+    b.classList.add('on');
+    const p = $('#rp-' + b.dataset.rt); if (p) p.classList.add('on');
+  }));
+  window._lastRec = rec;
+}
+window.copySum = async () => { const t = plain(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
+window.dlSum = () => { const t = plain(window._lastRec); const b = new Blob([t],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(window._lastRec.fileName.replace(/\.[^.]+$/,''))+'-ملخص.txt'; a.click(); toast('اتحمّل','ok'); };
+window.dlOrig = async (docId) => {
+  const m = META[docId]; if (!m || !m.fileId) return toast('الملف الأصلي مش متاح','err');
+  try {
+    const r = await worker('/file/'+m.fileId, { method: 'GET' });
+    if (!r.ok) throw new Error('الملف مش متاح');
+    const blob = await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الملف الأصلي','ok');
+  } catch(e){ toast(e.message,'err'); }
+};
+function plain(r){ const s=r.summary||{}; let o='ملخص: '+r.fileName+'\n\n'; if(s.tldr&&s.tldr.length){o+='أهم 3 نقاط:\n'+s.tldr.map(t=>'- '+t).join('\n')+'\n\n';} o+=(s.overview||'')+'\n\n'; (s.sections||[]).forEach(x=>{ o+='## '+x.heading+'\n'+(x.points||[]).map(p=>'- '+p).join('\n')+'\n\n'; }); (s.terms||[]).forEach(t=>o+='- '+t.term+': '+t.definition+'\n'); o+='\nأسئلة:\n'+(s.questions||[]).map((q,i)=>(i+1)+'. '+q).join('\n'); return o; }
+async function loadStats(){
+  const snap = await getDocs(query(collection(db,'summaries'), where('uid','==',currentUser.uid)));
+  const docs = snap.docs.sort((a,b)=>ts(b)-ts(a));
+  docs.forEach(d => { const x=d.data(); META[d.id]={fileId:x.fileId, fileName:x.fileName, fileDeleted:!!x.fileDeleted}; });
+  const n = docs.length;
+  const words = docs.reduce((s,d)=>s+(d.data().summary?.wordCount||0),0);
+  $('#stats').innerHTML = '<div class="feat"><div class="ic">📄</div><h3><bdi>'+n+'</bdi></h3><p>ملخصاتك</p></div><div class="feat"><div class="ic">📖</div><h3><bdi>'+words.toLocaleString('ar-EG')+'</bdi></h3><p>كلمات اتلخصت</p></div><div class="feat"><div class="ic">⏱️</div><h3><bdi>'+Math.round(words/180)+'</bdi></h3><p>دقائق مذاكرة وفّرتها</p></div>';
+  const recent = docs.slice(0,4);
+  $('#recent').innerHTML = recent.length ? recent.map(rowHtml).join('') : '<div class="empty">لسه مفيش ملخصات. ارفع أول ملف ✨</div>';
+}
+function rowHtml(d){ const x=d.data(); return '<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 10px"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+'</small></div><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button></div>'; }
+window.openRec = async id => {
+  const d = await getDoc(doc(db,'summaries',id));
+  if (d.exists()){ const x=d.data(); META[id]={fileId:x.fileId, fileName:x.fileName, fileDeleted:!!x.fileDeleted}; renderResult({id, ...x}); go('res'); }
+};
+async function lazyCleanup(docs){
+  const old = docs.filter(d => { const x=d.data(); return !x.fileDeleted && x.fileId && ageDays(x) > RETENTION_DAYS; });
+  if (!old.length) return;
+  await Promise.all(old.map(async d => {
+    try { await worker('/file/'+d.data().fileId, { method:'DELETE' }); } catch{}
+    try { await updateDoc(doc(db,'summaries',d.id), { fileDeleted:true }); } catch{}
+    if (META[d.id]) META[d.id].fileDeleted = true;
+  }));
+}
+async function loadLibrary(){
+  const snap = await getDocs(query(collection(db,'summaries'), where('uid','==',currentUser.uid)));
+  const docs = snap.docs.sort((a,b)=>ts(b)-ts(a));
+  docs.forEach(d => { const x=d.data(); META[d.id]={fileId:x.fileId, fileName:x.fileName, fileDeleted:!!x.fileDeleted}; });
+  await lazyCleanup(docs);
+  $('#libList').innerHTML = docs.length ? docs.map(d=>{
+    const x=d.data(); const canDl = x.fileId && !x.fileDeleted;
+    return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+' • <bdi>'+(x.summary?.wordCount||0)+'</bdi> كلمة'+(x.fileDeleted?' • <span style="color:var(--warn)">الملف الأصلي اتحذف (الملخص لسه موجود)</span>':'')+'</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button>'+(canDl?'<button class="btn btn-g" onclick="dlOrig(\''+d.id+'\')">📎</button>':'')+'<button class="btn btn-g" onclick="delRec(\''+d.id+'\')">🗑️</button></div></div>';
+  }).join('') : '<div class="empty">مكتبتك فاضية. ارفع أول ملف 📤</div>';
+}
+window.delRec = async (id) => {
+  if (!confirm('تحذف الملخص ده؟ (الملف الأصلي كمان هيتحذف)')) return;
+  const m = META[id] || {};
+  try { await deleteDoc(doc(db,'summaries',id)); } catch{}
+  if (m.fileId) { try { await worker('/file/'+m.fileId, { method:'DELETE' }); } catch{} }
+  delete META[id];
+  toast('اتحذف','ok'); loadLibrary(); loadStats();
+};
+if (matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
+</script>
 </body>
 </html>
