@@ -509,7 +509,7 @@ function applyView(v){
 }
 window.go=v=>{
   if(v==='admin'&&userRole!=='admin'){ v='my'; }
-  try{ history.pushState({v:v,ro:readOnly},'','#/'+v); }catch(e){}
+  if(v!=='proc'){ try{ history.pushState({v:v,ro:readOnly},'','#/'+v); }catch(e){} }
   applyView(v);
 };
 window.addEventListener('popstate',e=>{
@@ -569,11 +569,11 @@ window.summarize=async()=>{
     go('res'); toast('الملخص جاهز 🎉','ok'); pickedFile=null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
   } catch(err){ toast(err.message||'حصل خطأ','err'); go('upload'); }
 };
-window.toggleAcc=el=>el.parentElement.classList.toggle('open');
+window.goBack=()=>history.back();
 function renderResult(rec){
   const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter'}[rec.provider]||rec.provider;
   const canDl=rec.fileId&&!rec.fileDeleted; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
-  let html='<div class="head"><div><button class="btn btn-g" onclick="go(\'lib\')" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  let html='<div class="head"><div><button class="btn btn-g" onclick="goBack()" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
   if(canDl) html+='<button class="btn btn-s" onclick="dlOrig(\''+rec.id+'\')">📎 الملف الأصلي</button>';
   html+='<button class="btn btn-s" onclick="copySum()">📋 نسخ</button><button class="btn btn-s" onclick="dlSum()">⬇️ الملخص</button></div></div>';
   if(tldr.length) html+='<div class="tldr"><h4>⚡ اقرأ في 15 ثانية</h4><ul>'+tldr.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></div>';
