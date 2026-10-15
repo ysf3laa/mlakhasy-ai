@@ -88,6 +88,10 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 .prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),#7c3aed);transition:width .4s}
 .pill{display:inline-flex;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:800;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
 .pill.p{background:var(--soft);color:var(--primary);border-color:transparent}
+.sec-block{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px}
+.sec-block h4{margin:0 0 10px;font-size:18px;color:var(--primary)}
+.sec-block ul{margin:0;padding-inline-start:20px;line-height:1.9}
+.sec-block li::marker{color:var(--primary);font-weight:800}
 .tldr{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(14,165,233,.1));border:1px solid rgba(16,185,129,.25);border-radius:18px;padding:18px;margin-bottom:16px}
 .tldr h4{margin:0 0 10px;color:#047857;font-size:16px;display:flex;align-items:center;gap:8px}
 [data-theme=dark] .tldr h4{color:#34d399}
@@ -259,6 +263,17 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="head"><h1 style="font-size:18px">🏛️ الكليات</h1></div>
 <div id="collegeList"></div>
 </section>
+<section id="v-dept" class="hidden">
+<div class="head"><div><h1 id="deptTitle">الأقسام</h1><p>أقسام الكلية</p></div><button class="btn btn-s" onclick="go('admin')">→ رجوع للكليات</button></div>
+<div class="card" style="margin-bottom:14px">
+<div class="head"><h1 style="font-size:18px">➕ قسم جديد</h1></div>
+<div class="field"><label>اسم القسم</label><input class="inp" id="dName" placeholder="مثال: العلاج التحفظي"></div>
+<div class="field"><label>الاختصار</label><input class="inp" id="dCode" placeholder="مثال: CONS"></div>
+<button class="btn btn-p" style="width:100%" onclick="createDept()">أنشئ القسم</button>
+</div>
+<div class="head"><h1 style="font-size:18px">🧩 الأقسام</h1></div>
+<div id="deptList"></div>
+</section>
 </main>
 </div></div>
 <script type="module">
@@ -290,7 +305,12 @@ function toast(m,t=''){ const d=document.createElement('div'); d.className='tst 
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
 let currentUser=null, pickedFile=null, pickedURL=null;
 const META = {};
+
 let userRole = null;
+let currentCollege = null;
+let COLLEGES = [];
+let DEPTS = [];
+
 async function loadRole(){
   if(!currentUser) return;
   try {
@@ -316,12 +336,40 @@ async function loadColleges(){
   const el = document.getElementById('collegeList');
   if(!el) return;
   const snap = await getDocs(collection(db,'colleges'));
-  const docs = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML = docs.length ? docs.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><span class="pill p">قسم ←</span></div>').join('') : '<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
+  COLLEGES = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML = COLLEGES.length ? COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button></div>').join('') : '<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
+}
+window.openDept = (id) => {
+  const c = COLLEGES.find(x=>x.id===id);
+  if(!c) return;
+  currentCollege = { id: c.id, name: c.name };
+  document.getElementById('deptTitle').textContent = 'أقسام ' + c.name;
+  go('dept');
+};
+async function createDept(){
+  const name = document.getElementById('dName').value.trim();
+  const code = document.getElementById('dCode').value.trim();
+  if(!name || !code) return toast('اكتب اسم القسم والاختصار','warn');
+  if(!currentCollege) return toast('مفيش كلية مختارة','err');
+  try {
+    await addDoc(collection(db,'departments'), { name, code, collegeId: currentCollege.id, createdBy: currentUser.uid, admins:[currentUser.uid], createdAt: serverTimestamp() });
+    toast('اتنشأ القسم 🎉','ok');
+    document.getElementById('dName').value=''; document.getElementById('dCode').value='';
+    loadDepts();
+  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+}
+async function loadDepts(){
+  const el = document.getElementById('deptList');
+  if(!el || !currentCollege) return;
+  const snap = await getDocs(query(collection(db,'departments'), where('collegeId','==',currentCollege.id)));
+  DEPTS = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  el.innerHTML = DEPTS.length ? DEPTS.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><span class="pill p">فصل ←</span></div>').join('') : '<div class="empty">مفيش أقسام لسه. أنشئ واحد فوق ☝️</div>';
 }
 window.loadRole = loadRole;
 window.createCollege = createCollege;
 window.loadColleges = loadColleges;
+window.createDept = createDept;
+window.loadDepts = loadDepts;
 window.openAuth = m => { $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth = () => $('#authModal').classList.add('hidden');
 window.setAuth = m => {
@@ -360,9 +408,11 @@ onAuthStateChanged(auth, u => {
   }
 });
 window.go = v => {
-  ['dash','upload','proc','res','lib','admin'].forEach(x => $('#v-'+x).classList.toggle('hidden', x!==v));
+  ['dash','upload','proc','res','lib','admin','dept'].forEach(x => $('#v-'+x).classList.toggle('hidden', x!==v));
   $$('.nav-i').forEach(b => b.classList.toggle('on', b.dataset.v===v));
   if (v==='dash') loadStats();
+  if (v==='admin') loadColleges();
+  if (v==='dept') loadDepts();
 };
 const dz = $('#dz'), fileInput = $('#file');
 ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('on'); }));
