@@ -66,10 +66,6 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 .field label{display:block;margin-bottom:7px;font-weight:700;font-size:14px}
 .inp{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none}
 .inp:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--soft)}
-.radio-row{display:flex;flex-direction:column;gap:8px}
-.radio-row label{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
-.chk-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--surface2)}
-.chk-list label{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;font-size:14px}
 .app{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 64px)}
 .side{background:var(--surface);border-inline-end:1px solid var(--border);padding:18px;display:flex;flex-direction:column;gap:8px}
 .side .nav-i{display:flex;align-items:center;gap:10px;padding:12px;border:none;border-radius:14px;background:transparent;color:var(--muted);font-weight:700;cursor:pointer;text-align:start;width:100%}
@@ -275,7 +271,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div id="myList"></div>
 </section>
 <section id="v-join" class="hidden">
-<div class="head"><div><h1>انضمام لكلية</h1><p>اكتب كود الكلية اللي الدكتور/العميد اداك ياه</p></div><button class="btn btn-s" onclick="go('my')">→ رجوع</button></div>
+<div class="head"><div><h1>انضمام لكلية</h1><p>اكتب كود الكلية اللي الدكتور اداك ياه</p></div><button class="btn btn-s" onclick="go('my')">→ رجوع</button></div>
 <div class="card">
 <div class="field"><label>كود الكلية</label><input class="inp" id="joinCode" placeholder="مثال: CLG-A3F9K2"></div>
 <button class="btn btn-p" style="width:100%" onclick="joinByCode()">انضم للكلية</button>
@@ -283,8 +279,8 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 </div>
 </section>
 <section id="v-admin" class="hidden">
-<div class="head"><div><h1>إدارة</h1><p>إنشاء الكليات والأقسام والمواد</p></div></div>
-<div class="card" style="margin-bottom:14px">
+<div class="head"><div><h1>إدارة</h1><p>الكليات اللي إنت مسؤول عنها</p></div></div>
+<div class="card" style="margin-bottom:14px" id="cgForm">
 <div class="head"><h1 style="font-size:18px">➕ كلية جديدة</h1></div>
 <div class="field"><label>اسم الكلية</label><input class="inp" id="cName" placeholder="مثال: طب الأسنان"></div>
 <div class="field"><label>الاختصار</label><input class="inp" id="cCode" placeholder="مثال: DENT"></div>
@@ -294,7 +290,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div id="collegeList"></div>
 </section>
 <section id="v-dept" class="hidden">
-<div class="head"><div><h1 id="deptTitle">الأقسام</h1><p>أقسام الكلية</p></div><button class="btn btn-s" onclick="go('admin')">→ رجوع للكليات</button></div>
+<div class="head"><div><h1 id="deptTitle">الأقسام</h1><p>أقسام الكلية</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" id="stuBtn" onclick="openStudents()">👥 الطلاب</button><button class="btn btn-s" onclick="go('admin')">→ رجوع</button></div></div>
 <div class="card" style="margin-bottom:14px" id="dForm">
 <div class="head"><h1 style="font-size:18px">➕ قسم جديد</h1></div>
 <div class="field"><label>اسم القسم</label><input class="inp" id="dName" placeholder="مثال: العلاج التحفظي"></div>
@@ -315,7 +311,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div id="semList"></div>
 </section>
 <section id="v-course" class="hidden">
-<div class="head"><div><h1 id="courseTitle">المواد</h1><p>مواد الفصل</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="go('sem')">→ رجوع</button><button class="btn btn-p" id="tcBtn" onclick="openAddTeacher()">🧑🏫 أضف دكتور</button></div></div>
+<div class="head"><div><h1 id="courseTitle">المواد</h1><p>مواد الفصل</p></div><button class="btn btn-s" onclick="go('sem')">→ رجوع للفصول</button></div>
 <div class="card" style="margin-bottom:14px" id="coForm">
 <div class="head"><h1 style="font-size:18px">➕ مادة جديدة</h1></div>
 <div class="field"><label>اسم المادة</label><input class="inp" id="coName" placeholder="مثال: المورفولوجيا"></div>
@@ -341,6 +337,10 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="head"><h1 style="font-size:18px">🎬 المحاضرات</h1></div>
 <div id="lecList"></div>
 </section>
+<section id="v-students" class="hidden">
+<div class="head"><div><h1 id="stuTitle">الطلاب</h1><p>الطلاب المنضمين للكلية</p></div><button class="btn btn-s" onclick="go('dept')">→ رجوع للأقسام</button></div>
+<div id="stuList"></div>
+</section>
 </main>
 </div></div>
 <div class="modal hidden" id="editModal"><div class="modal-card">
@@ -349,24 +349,11 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="field" id="editF2wrap"><label id="editL2">الاختصار</label><input class="inp" id="editF2"></div>
 <button class="btn btn-p" style="width:100%" onclick="saveEdit()">💾 احفظ</button>
 </div></div>
-<div class="modal hidden" id="teacherModal"><div class="modal-card">
-<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">🧑‍ إضافة دكتور</h1><button class="btn btn-g" onclick="closeTeacher()">✕</button></div>
-<div class="field"><label>بريد الدكتور الإلكتروني</label><input class="inp" id="tEmail" type="email" placeholder="example@mail.com"></div>
-<div class="field"><label>نطاق التدريس</label>
-<div class="radio-row">
-<label><input type="radio" name="tScope" value="all" checked onchange="toggleTScope()"> كل مواد الكلية</label>
-<label><input type="radio" name="tScope" value="courses" onchange="toggleTScope()"> مواد محددة</label>
-</div>
-</div>
-<div class="field hidden" id="tCourseWrap"><label>اختار المواد</label><div class="chk-list" id="tCourseList"></div></div>
-<p style="color:var(--muted);font-size:13px;margin-bottom:12px">لازم الدكتور يكون عمل حساب بالبريد ده الأول. بعد الإضافة، هيقدر يرفع محاضرات في المواد دي.</p>
-<button class="btn btn-p" style="width:100%" onclick="addTeacherByEmail()">➕ أضفه دكتور</button>
-</div></div>
-<div class="modal hidden" id="deanModal"><div class="modal-card">
-<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">👔 تعيين عميد</h1><button class="btn btn-g" onclick="closeDean()">✕</button></div>
-<div class="field"><label>بريد العميد الإلكتروني</label><input class="inp" id="dEmail" type="email" placeholder="example@mail.com"></div>
-<p style="color:var(--muted);font-size:13px;margin-bottom:12px">العميد هيقدر يضيف دكاترة في هذه الكلية بس.</p>
-<button class="btn btn-p" style="width:100%" onclick="appointDean()">عيّن عميد</button>
+<div class="modal hidden" id="docModal"><div class="modal-card">
+<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">🧑‍🏫 تعيين دكتور</h1><button class="btn btn-g" onclick="closeDoc()">✕</button></div>
+<div class="field"><label>بريد الدكتور الإلكتروني</label><input class="inp" id="docEmail" type="email" placeholder="example@mail.com"></div>
+<p style="color:var(--muted);font-size:13px;margin-bottom:12px">الدكتور هيبقى مسؤول عن كل المواد والطلاب في هذه الكلية. لازم يكون عمل حساب بالبريد ده الأول.</p>
+<button class="btn btn-p" style="width:100%" onclick="appointDoctor()">عيّن دكتور</button>
 </div></div>
 <script type="module">
 const FIREBASE_CONFIG = {
@@ -396,8 +383,8 @@ function toast(m,t=''){ const d=document.createElement('div'); d.className='tst 
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
 let currentUser=null, pickedFile=null, pickedURL=null, lecFile=null, lecURL=null;
 const META = {};
-let userRole=null, backTo='course', readOnly=false, canLec=false, canManage=false;
-let myDeansOf=[], myTeacherOf=[];
+let userRole='student', backTo='course', readOnly=false, canLec=false, canManage=false;
+let myDoctorOf=[], myMemberOf=[];
 let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
 let editType=null, editId=null, editFileId=null;
@@ -428,25 +415,25 @@ async function ensureUserDoc(){
   try{
     const ref=doc(db,'users',currentUser.uid);
     const ex=await getDoc(ref);
-    if(!ex.exists()){
-      await setDoc(ref,{uid:currentUser.uid,email:(currentUser.email||'').toLowerCase(),name:currentUser.displayName||'',role:'student',createdAt:serverTimestamp()});
-    }
+    if(!ex.exists()) await setDoc(ref,{uid:currentUser.uid,email:(currentUser.email||'').toLowerCase(),name:currentUser.displayName||'',role:'student',createdAt:serverTimestamp()});
   }catch(e){}
 }
 async function loadRole(){
   if(!currentUser) return;
-  let ur='student';
-  try{ const d=await getDoc(doc(db,'users',currentUser.uid)); ur=d.exists()?(d.data().role||'student'):'student'; }catch{}
-  try{
-    const or=await getDoc(doc(db,'org_roles',currentUser.uid));
-    if(or.exists()){ const od=or.data(); myDeansOf=od.deansOf||[]; myTeacherOf=od.teacherOf||[]; if(od.super) ur='admin'; }
-  }catch{}
-  userRole=ur;
-  const b=$('#navAdmin'); if(b) b.classList.toggle('hidden', ur!=='admin');
-  if(ur==='admin') loadColleges();
+  let ur='student', docOf=[], memOf=[];
+  try{ const d=await getDoc(doc(db,'users',currentUser.uid)); if(d.exists()&&d.data().role==='admin') ur='admin'; }catch{}
+  if(ur!=='admin'){
+    try{ const o=await getDoc(doc(db,'org_roles',currentUser.uid)); if(o.exists()){ const od=o.data(); docOf=od.doctorOf||[]; memOf=od.memberOf||[]; if(docOf.length) ur='doctor'; } }catch{}
+  }
+  userRole=ur; myDoctorOf=docOf; myMemberOf=memOf;
+  const isMgr=(ur==='admin'||docOf.length>0);
+  const b=$('#navAdmin'); if(b) b.classList.toggle('hidden', !isMgr);
+  if(isMgr) loadColleges();
 }
-function actions(type,id,fileId){
-  if(userRole!=='admin'||readOnly) return '';
+function canM(cid){ return userRole==='admin'||myDoctorOf.includes(cid); }
+function actions(type,id,fileId,cid){
+  const target = cid || (currentCollege?currentCollege.id:'');
+  if(!canM(target)||readOnly) return '';
   const ff = fileId ? ",\'"+fileId+"\'" : "";
   return '<button class="btn btn-g" onclick="editItem(\''+type+'\',\''+id+'\')">✏️</button><button class="btn btn-g" onclick="delItem(\''+type+'\',\''+id+'\''+ff+')">🗑️</button>';
 }
@@ -486,22 +473,42 @@ async function createCollege(){
   const name=$('#cName').value.trim(), code=$('#cCode').value.trim();
   if(!name||!code) return toast('اكتب اسم الكلية والاختصار','warn');
   const inv='CLG-'+rid();
-  try { await addDoc(collection(db,'colleges'),{name,code,inviteCode:inv,createdBy:currentUser.uid,admins:[currentUser.uid],createdAt:serverTimestamp()}); toast('اتنشأت الكلية 🎉 كود الانضمام: '+inv,'ok'); $('#cName').value=''; $('#cCode').value=''; loadColleges(); }
+  try { await addDoc(collection(db,'colleges'),{name,code,inviteCode:inv,createdBy:currentUser.uid,createdAt:serverTimestamp()}); toast('اتنشأت الكلية 🎉 كود الانضمام: '+inv,'ok'); $('#cName').value=''; $('#cCode').value=''; loadColleges(); }
   catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
 window.genCollegeCode=async(cid)=>{ const nc='CLG-'+rid(); try { await updateDoc(doc(db,'colleges',cid),{inviteCode:nc}); toast('الكود: '+nc,'ok'); loadColleges(); } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); } };
+window.openDoc=(cid,cname)=>{ currentCollege={id:cid,name:cname}; $('#docEmail').value=''; $('#docModal').classList.remove('hidden'); };
+window.closeDoc=()=>$('#docModal').classList.add('hidden');
+window.appointDoctor=async()=>{
+  const email=$('#docEmail').value.trim().toLowerCase();
+  if(!email) return toast('اكتب بريد الدكتور','warn');
+  if(!currentCollege) return toast('مفيش كلية مختارة','err');
+  try{
+    const snap=await getDocs(query(collection(db,'users'),where('email','==',email)));
+    if(snap.empty) return toast('مفيش حساب بالبريد ده. خلّيه يسجّل أول.','err');
+    const uid=snap.docs[0].id;
+    if(uid===currentUser.uid) return toast('مش هتعيّن نفسك','warn');
+    const ore=doc(db,'org_roles',uid);
+    const ex=await getDoc(ore);
+    if(!ex.exists()) await setDoc(ore,{role:'doctor',doctorOf:[currentCollege.id],memberOf:[]});
+    else await updateDoc(ore,{role:'doctor',doctorOf:arrayUnion(currentCollege.id)});
+    toast('اتعيّن دكتور لـ '+currentCollege.name+' ✓','ok');
+    closeDoc();
+  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+};
 async function loadColleges(){
   const el=$('#collegeList'); if(!el) return;
   const snap=await getDocs(collection(db,'colleges'));
-  COLLEGES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>')+'<button class="btn btn-g" onclick="openDean(\''+x.id+'\',\''+esc(x.name)+'\')">👔 عميد</button><button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
+  let all=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
+  COLLEGES = userRole==='admin' ? all : all.filter(x=>myDoctorOf.includes(x.id));
+  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(userRole==='admin'?'<button class="btn btn-g" onclick="openDoc(\''+x.id+'\',\''+esc(x.name)+'\')">🧑‍🏫 دكتور</button>':'')+(canM(x.id)?(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>'):'')+'<button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id,null,x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات. أنشئ واحدة فوق ☝️</div>';
 }
 window.openDept=(id)=>{ const c=COLLEGES.find(x=>x.id===id); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=false; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 async function createDept(){
   const name=$('#dName').value.trim(), code=$('#dCode').value.trim();
   if(!name||!code) return toast('اكتب اسم القسم والاختصار','warn');
   if(!currentCollege) return toast('مفيش كلية مختارة','err');
-  try { await addDoc(collection(db,'departments'),{name,code,collegeId:currentCollege.id,createdBy:currentUser.uid,admins:[currentUser.uid],createdAt:serverTimestamp()}); toast('اتنشأ القسم 🎉','ok'); $('#dName').value=''; $('#dCode').value=''; loadDepts(); }
+  try { await addDoc(collection(db,'departments'),{name,code,collegeId:currentCollege.id,createdBy:currentUser.uid,createdAt:serverTimestamp()}); toast('اتنشأ القسم 🎉','ok'); $('#dName').value=''; $('#dCode').value=''; loadDepts(); }
   catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
 async function loadDepts(){
@@ -515,7 +522,7 @@ async function createSem(){
   const name=$('#smName').value.trim();
   if(!name) return toast('اكتب اسم الفصل','warn');
   if(!currentDept) return toast('مفيش قسم مختار','err');
-  try { await addDoc(collection(db,'semesters'),{name,departmentId:currentDept.id,collegeId:currentCollege.id,createdBy:currentUser.uid,admins:[currentUser.uid],createdAt:serverTimestamp()}); toast('اتنشأ الفصل 🎉','ok'); $('#smName').value=''; loadSems(); }
+  try { await addDoc(collection(db,'semesters'),{name,departmentId:currentDept.id,collegeId:currentCollege.id,createdBy:currentUser.uid,createdAt:serverTimestamp()}); toast('اتنشأ الفصل 🎉','ok'); $('#smName').value=''; loadSems(); }
   catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
 async function loadSems(){
@@ -530,7 +537,7 @@ async function createCourse(){
   if(!name) return toast('اكتب اسم المادة','warn');
   if(!code) code=(currentCollege?currentCollege.name.slice(0,4):'CRS').toUpperCase()+'-'+rid();
   if(!currentSem) return toast('مفيش فصل مختار','err');
-  try { await addDoc(collection(db,'courses'),{name,code,semesterId:currentSem.id,departmentId:currentDept.id,collegeId:currentCollege.id,teachers:[currentUser.uid],createdBy:currentUser.uid,createdAt:serverTimestamp()}); toast('اتنشأت المادة 🎉 الكود: '+code,'ok'); $('#coName').value=''; $('#coCode').value=''; loadCourses(); }
+  try { await addDoc(collection(db,'courses'),{name,code,semesterId:currentSem.id,departmentId:currentDept.id,collegeId:currentCollege.id,createdBy:currentUser.uid,createdAt:serverTimestamp()}); toast('اتنشأت المادة 🎉 الكود: '+code,'ok'); $('#coName').value=''; $('#coCode').value=''; loadCourses(); }
   catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
 async function loadCourses(){
@@ -544,9 +551,7 @@ window.openLecture=async(id,from)=>{
   if(!c)return;
   currentCourse={id:c.id,name:c.name,code:c.code};
   backTo=from||'course';
-  let isT=(userRole==='admin');
-  try{ const r=await getDoc(doc(db,'org_roles',currentUser.uid)); if(r.exists()&&(r.data().teacherOf||[]).includes(id)) isT=true; }catch{}
-  canLec=isT;
+  canLec=canManage;
   $('#lecTitle').textContent='محاضرات '+c.name;
   loadLectures(); go('lecture');
 };
@@ -578,75 +583,28 @@ async function loadLectures(){
   el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح</button>'+actions('lecture',x.id,x.fileId)+'</div></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
 }
 window.openLec=(id)=>{ const x=LECTURES.find(a=>a.id===id); if(!x)return; META[id]={fileId:null,fileName:x.name,fileDeleted:true}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,fileSize:0,fileId:null,fileDeleted:true}); go('res'); };
-
-window.toggleTScope=()=>{ const v=$('input[name=tScope]:checked').value; $('#tCourseWrap').classList.toggle('hidden', v!=='courses'); };
-window.openAddTeacher=async()=>{
-  if(!currentCollege) return toast('افتح الكلية الأول','warn');
-  $('#tEmail').value='';
-  $('input[name=tScope][value=all]').checked=true; $('#tCourseWrap').classList.add('hidden');
+window.openStudents=async()=>{
+  if(!currentCollege) return;
+  $('#stuTitle').textContent='طلاب '+currentCollege.name;
+  const el=$('#stuList'); el.innerHTML='<div class="empty">بيحمّل…</div>';
+  go('students');
   try{
-    const cs=await getDocs(query(collection(db,'courses'),where('collegeId','==',currentCollege.id)));
-    const list=cs.docs.map(x=>({id:x.id,...x.data()}));
-    $('#tCourseList').innerHTML=list.length?list.map(c=>'<label><input type="checkbox" value="'+c.id+'"> '+esc(c.name)+'</label>').join(''):'<small style="color:var(--muted)">مفيش مواد في الكلية دي لسه.</small>';
-  }catch(e){ $('#tCourseList').innerHTML='<small style="color:var(--err)">خطأ في تحميل المواد</small>'; }
-  $('#teacherModal').classList.remove('hidden');
+    const snap=await getDocs(query(collection(db,'members'),where('collegeId','==',currentCollege.id)));
+    const docs=snap.docs.map(d=>d.data());
+    el.innerHTML=docs.length?docs.map(m=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px"><div><b>'+esc(m.name||'طالب')+'</b><br><small style="color:var(--muted)">'+esc(m.email||'')+'</small></div></div>').join(''):'<div class="empty">مفيش طلاب انضموا لسه.</div>';
+  }catch(e){ el.innerHTML='<div class="empty">خطأ: '+esc(e.message)+'</div>'; }
 };
-window.closeTeacher=()=>$('#teacherModal').classList.add('hidden');
-window.addTeacherByEmail=async()=>{
-  const email=$('#tEmail').value.trim().toLowerCase();
-  if(!email) return toast('اكتب بريد الدكتور','warn');
-  if(!currentCollege) return toast('مفيش كلية مختارة','err');
-  const scope=$('input[name=tScope]:checked').value;
-  let courseIds=[], collegeIds=[currentCollege.id];
-  if(scope==='all'){
-    try{ const cs=await getDocs(query(collection(db,'courses'),where('collegeId','==',currentCollege.id))); courseIds=cs.docs.map(x=>x.id); }catch(e){ return toast('فشل تحميل المواد','err'); }
-  } else {
-    courseIds=$$('#tCourseList input:checked').map(i=>i.value);
-    collegeIds=[...new Set(courseIds.map(id=>{const c=COURSES.find(x=>x.id===id);return c?c.collegeId:currentCollege.id;}).filter(Boolean))];
-  }
-  if(!courseIds.length) return toast('مفيش مواد في النطاق ده','warn');
-  try{
-    const snap=await getDocs(query(collection(db,'users'),where('email','==',email)));
-    if(snap.empty) return toast('مفيش حساب بالبريد ده. خلّيه يسجّل أول.','err');
-    const uid=snap.docs[0].id;
-    if(uid===currentUser.uid) return toast('مش هتضيف نفسك','warn');
-    const ore=doc(db,'org_roles',uid);
-    const ex=await getDoc(ore);
-    if(!ex.exists()) await setDoc(ore,{super:false,deansOf:[],headsOf:[],teacherOf:courseIds,teacherColleges:collegeIds,memberOf:[]});
-    else await updateDoc(ore,{teacherOf:arrayUnion(...courseIds),teacherColleges:arrayUnion(...collegeIds)});
-    toast('اتعيّن دكتور في '+courseIds.length+' مادة ✓','ok');
-    closeTeacher();
-  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
-};
-window.openDean=(cid,cname)=>{ currentCollege={id:cid,name:cname}; $('#dEmail').value=''; $('#deanModal').classList.remove('hidden'); };
-window.closeDean=()=>$('#deanModal').classList.add('hidden');
-window.appointDean=async()=>{
-  const email=$('#dEmail').value.trim().toLowerCase();
-  if(!email) return toast('اكتب بريد العميد','warn');
-  if(!currentCollege) return toast('مفيش كلية مختارة','err');
-  try{
-    const snap=await getDocs(query(collection(db,'users'),where('email','==',email)));
-    if(snap.empty) return toast('مفيش حساب بالبريد ده. خلّيه يسجّل أول.','err');
-    const uid=snap.docs[0].id;
-    if(uid===currentUser.uid) return toast('مش هتعيّن نفسك','warn');
-    const ore=doc(db,'org_roles',uid);
-    const ex=await getDoc(ore);
-    if(!ex.exists()) await setDoc(ore,{super:false,deansOf:[currentCollege.id],headsOf:[],teacherOf:[],teacherColleges:[],memberOf:[]});
-    else await updateDoc(ore,{deansOf:arrayUnion(currentCollege.id)});
-    toast('اتعيّن عميد لـ '+currentCollege.name+' ✓','ok');
-    closeDean();
-  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
-};
-
 window.joinByCode=async()=>{
   const code=$('#joinCode').value.trim().toUpperCase();
   if(!code) return toast('اكتب الكود','warn');
   try {
     const snap=await getDocs(query(collection(db,'colleges'),where('inviteCode','==',code)));
     if(snap.empty) return toast('مفيش كلية بالكود ده','err');
-    const cid=snap.docs[0].id; const ref=doc(db,'org_roles',currentUser.uid); const ex=await getDoc(ref);
+    const col=snap.docs[0]; const cid=col.id;
+    const ref=doc(db,'org_roles',currentUser.uid); const ex=await getDoc(ref);
     if(ex.exists()) await updateDoc(ref,{memberOf:arrayUnion(cid)});
-    else await setDoc(ref,{super:false,deansOf:[],headsOf:[],teacherOf:[],teacherColleges:[],memberOf:[cid]});
+    else await setDoc(ref,{role:'student',doctorOf:[],memberOf:[cid]});
+    await setDoc(doc(db,'members',cid+'_'+currentUser.uid),{collegeId:cid,uid:currentUser.uid,name:currentUser.displayName||'',email:(currentUser.email||'').toLowerCase(),joinedAt:serverTimestamp()});
     toast('انضميت للكلية 🎉','ok'); $('#joinCode').value=''; go('my'); loadMy();
   } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 };
@@ -654,10 +612,8 @@ async function loadMy(){
   const el=$('#myList'); if(!el) return;
   try {
     const r=await getDoc(doc(db,'org_roles',currentUser.uid));
-    if(!r.exists()){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
-    const d=r.data();
-    const ids=[...new Set([...(d.memberOf||[]),...(d.teacherColleges||[])])];
-    if(!ids.length){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
+    if(!r.exists()||!(r.data().memberOf||[]).length){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
+    const ids=r.data().memberOf;
     const snap=await getDocs(query(collection(db,'colleges'),where('__name__','in',ids)));
     MY=snap.docs.map(x=>({id:x.id,...x.data()}));
     el.innerHTML=MY.length?MY.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="myCollege(\''+x.id+'\')">ادخل الكلية ←</button></div>').join(''):'<div class="empty">مفيش كليات.</div>';
@@ -669,8 +625,7 @@ window.loadRole=loadRole; window.ensureUserDoc=ensureUserDoc; window.createColle
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
 window.joinByCode=joinByCode; window.loadMy=loadMy; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
-window.openAddTeacher=openAddTeacher; window.closeTeacher=closeTeacher; window.addTeacherByEmail=addTeacherByEmail; window.toggleTScope=toggleTScope;
-window.openDean=openDean; window.closeDean=closeDean; window.appointDean=appointDean;
+window.openDoc=openDoc; window.closeDoc=closeDoc; window.appointDoctor=appointDoctor; window.openStudents=openStudents;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
@@ -689,15 +644,16 @@ onAuthStateChanged(auth,u=>{
   else { $('#landing').classList.remove('hidden'); $('#app').classList.add('hidden'); $('#navLinks').classList.remove('hidden'); $('#navUser').classList.add('hidden'); }
 });
 function applyView(v){
-  ['dash','upload','proc','res','lib','my','join','admin','dept','sem','course','lecture'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
+  ['dash','upload','proc','res','lib','my','join','admin','dept','sem','course','lecture','students'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
   $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
-  const rf=readOnly?'none':'block';
+  canManage = (userRole==='admin')||(currentCollege&&myDoctorOf.includes(currentCollege.id));
+  const rf=(readOnly||!canManage)?'none':'block';
+  const cg=$('#cgForm'); if(cg) cg.style.display=(userRole==='admin')?'block':'none';
   const df=$('#dForm'); if(df) df.style.display=rf;
   const sf=$('#smForm'); if(sf) sf.style.display=rf;
   const cf=$('#coForm'); if(cf) cf.style.display=rf;
-  const lf=$('#lecUploadCard'); if(lf) lf.style.display=canLec?'block':'none';
-  canManage=(userRole==='admin')||(currentCollege&&myDeansOf.includes(currentCollege.id));
-  const tc=$('#tcBtn'); if(tc) tc.style.display=canManage?'inline-flex':'none';
+  const lf=$('#lecUploadCard'); if(lf) lf.style.display=canManage?'block':'none';
+  const sb=$('#stuBtn'); if(sb) sb.style.display=canManage?'inline-flex':'none';
   if(v==='dash') loadStats();
   if(v==='my') loadMy();
   if(v==='admin') loadColleges();
@@ -706,7 +662,7 @@ function applyView(v){
   if(v==='course') loadCourses();
 }
 window.go=v=>{
-  if(v==='admin'&&userRole!=='admin'){ v='my'; }
+  if((v==='admin')&&!(userRole==='admin'||myDoctorOf.length>0)){ v='my'; }
   if(v!=='proc'){ try{ history.pushState({v:v,ro:readOnly},'','#/'+v); }catch(e){} }
   applyView(v);
 };
@@ -714,7 +670,7 @@ window.goBack=()=>history.back();
 window.addEventListener('popstate',e=>{
   const st=e.state||{};
   let v=st.v||'dash';
-  if(v==='admin'&&userRole!=='admin'){ v='my'; }
+  if((v==='admin')&&!(userRole==='admin'||myDoctorOf.length>0)){ v='my'; }
   readOnly=!!st.ro;
   applyView(v);
 });
