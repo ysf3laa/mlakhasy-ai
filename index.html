@@ -208,12 +208,12 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <div class="card" id="recentCard" style="margin-top:18px"><div class="head"><h1 style="font-size:20px">آخر الملخصات</h1></div><div id="recent"></div></div>
 </section>
 <section id="v-upload" class="hidden">
-<div class="head"><div><h1>ارفع ملفك</h1><p>ملف أو صورة أو نص — حتى <bdi>30</bdi> ميجابايت</p></div></div>
+<div class="head"><div><h1>ارفع ملفاتك</h1><p>ملف أو أكتر (مجموعة) أو صورة أو نص — حتى <bdi>30</bdi> ميجابايت للملف، <bdi>8</bdi> ملفات للمجموعة</p></div></div>
 <div class="row2">
 <div class="card">
 <label class="dz" id="dz">
-<input type="file" id="file" accept=".pdf,.txt,image/*" hidden>
-<div class="big">📤</div><strong>اسحب الملف هنا أو اضغط للاختيار</strong><small>PDF · TXT · PNG · JPG · WEBP</small>
+<input type="file" id="file" accept=".pdf,.txt,image/*" multiple hidden>
+<div class="big">📤</div><strong>اسحب الملفات هنا أو اضغط للاختيار</strong><small>PDF · TXT · PNG · JPG · WEBP — اختار أكتر من ملف عشان يتلخّصوا كمجموعة واحدة</small>
 </label>
 <div id="picked"></div>
 </div>
@@ -225,7 +225,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <select class="inp" id="sLang"><option value="ar">عربي (مع المصطلحات الأجنبية)</option><option value="en">إنجليزي</option></select>
 </div>
 <button class="btn btn-p" style="width:100%" id="go" disabled onclick="summarize()">✨ ابدأ التلخيص</button>
-<p style="color:var(--muted);font-size:13px;margin-top:12px">الملف بيكمّل في الخلفية — تقدر تكمّل تصفح الموقع، وتلغي في أي وقت من الشريط تحت. بعد ما يخلص، تقدر تغيّر نوع الملخص من جوه صفحة النتيجة من غير ما ترفع تاني.</p>
+<p style="color:var(--muted);font-size:13px;margin-top:12px">لو اخترت أكتر من ملف، هيتعامل معهم كمادة واحدة متصلة ويتلخّصوا في ملخص واحد مدمج. الملف بيكمّل في الخلفية — تقدر تكمّل تصفح الموقع، وتلغي في أي وقت من الشريط تحت. بعد ما يخلص، تقدر تغيّر نوع الملخص من جوه صفحة النتيجة من غير ما ترفع تاني.</p>
 </div>
 </div>
 <div style="margin-top:14px;text-align:center"><button class="btn btn-s" onclick="runDiag()">🔍 افحص مفاتيح Gemini (تشخيص)</button></div>
@@ -379,7 +379,7 @@ const FIREBASE_CONFIG = {
   appId: "1:94902233455:web:7cd27d0da6d3615ba2209a"
 };
 const WORKER_URL = "https://mlakhasy-ai.ysf-3laa.workers.dev";
-const MAX_MB = 30, RETENTION_DAYS = 180;
+const MAX_MB = 30, RETENTION_DAYS = 180, MAX_FILES = 8, TOTAL_MB = 12;
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword, deleteUser } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, getDoc, setDoc, updateDoc, query, where, deleteDoc, doc, serverTimestamp, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -409,7 +409,7 @@ const ageDays = d => (Date.now()/1000 - ts(d)) / 86400;
 const rid = () => Math.random().toString(36).slice(2,8).toUpperCase();
 function toast(m,t=''){ const d=document.createElement('div'); d.className='tst '+t; d.textContent=m; $('#toast').appendChild(d); setTimeout(()=>{d.style.opacity=0;setTimeout(()=>d.remove(),250)},3600); }
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
-let currentUser=null, pickedFile=null, pickedURL=null, lecFile=null, lecURL=null;
+let currentUser=null, pickedFiles=[], lecFile=null, lecURL=null;
 const META = {};
 let userRole='student', backTo='course', readOnly=false, canLec=false, canManage=false;
 let myDoctorOf=[], myMemberOf=[];
@@ -433,12 +433,12 @@ function renderTasks(){
     return '<div class="tk '+cls+'"><div class="tk-top"><span>'+ic+'</span><span class="tk-name">'+esc(t.name)+'</span></div><div class="tk-bar"><i style="width:'+t.progress+'%"></i></div><div class="tk-st">'+esc(t.msg)+'</div><div class="tk-acts">'+acts+'</div></div>';
   }).join('');
 }
-window.cancelTask=id=>{ const t=TASKS[id]; if(!t||t.status!=='active') return; try{t.controller.abort();}catch{} if(t.fileId){ worker('/file/'+t.fileId,{method:'DELETE'}).catch(()=>{}); } delete TASKS[id]; renderTasks(); toast('اتلغى','warn'); };
+window.cancelTask=id=>{ const t=TASKS[id]; if(!t||t.status!=='active') return; try{t.controller.abort();}catch{} if(t.fileId){ worker('/file/'+t.fileId,{method:'DELETE'}).catch(()=>{}); } if(t.fileIds){ t.fileIds.forEach(fid=>worker('/file/'+fid,{method:'DELETE'}).catch(()=>{})); } delete TASKS[id]; renderTasks(); toast('اتلغى','warn'); };
 window.openTask=id=>{ const t=TASKS[id]; if(!t||t.status!=='done'||!t.rec) return; renderResult(t.rec); go('res'); };
 window.dismissTask=id=>{ delete TASKS[id]; renderTasks(); };
-function newTask(name){ const id='t'+(++taskSeq); TASKS[id]={id,name,status:'active',progress:5,msg:'بيرفع الملف…',controller:new AbortController(),fileId:null,rec:null,courseId:null}; renderTasks(); return TASKS[id]; }
+function newTask(name){ const id='t'+(++taskSeq); TASKS[id]={id,name,status:'active',progress:5,msg:'بيرفع الملف…',controller:new AbortController(),fileId:null,fileIds:null,rec:null,courseId:null}; renderTasks(); return TASKS[id]; }
 function updTask(t,p,m){ t.progress=p; t.msg=m; renderTasks(); }
-function failTask(t,err){ if(!TASKS[t.id]) return; if(err&&err.name==='AbortError') return; t.status='error'; t.progress=100; t.msg=(err&&err.message)||'حصل خطأ'; renderTasks(); if(t.fileId){ worker('/file/'+t.fileId,{method:'DELETE'}).catch(()=>{}); } }
+function failTask(t,err){ if(!TASKS[t.id]) return; if(err&&err.name==='AbortError') return; t.status='error'; t.progress=100; t.msg=(err&&err.message)||'حصل خطأ'; renderTasks(); if(t.fileId){ worker('/file/'+t.fileId,{method:'DELETE'}).catch(()=>{}); } if(t.fileIds){ t.fileIds.forEach(fid=>worker('/file/'+fid,{method:'DELETE'}).catch(()=>{})); } }
 
 async function ensureUserDoc(){
   if(!currentUser) return;
@@ -533,8 +533,8 @@ window.filterLib=()=>{
   el.innerHTML=list.length?list.map(d=>libRow(d)).join(''):'<div class="empty">'+(q?'مفيش نتائج للكلمة دي.':'مكتبتك فاضية. ارفع أول ملف 📤')+'</div>';
 };
 function libRow(d){
-  const x=d.data(); const canDl=x.fileId&&!x.fileDeleted;
-  return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+' • <bdi>'+(x.summary?.wordCount||0)+'</bdi> كلمة'+(x.fileDeleted?' • <span style="color:var(--warn)">الأصلي اتحذف</span>':'')+'</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button>'+favStar('summary',d.id,x.fileName)+(canDl?'<button class="btn btn-g" onclick="dlOrig(\''+d.id+'\')">📎</button>':'')+'<button class="btn btn-g" onclick="delRec(\''+d.id+'\')">🗑️</button></div></div>';
+  const x=d.data(); const canDl=x.fileId&&!x.fileDeleted; const isG=x.isGroup&&(x.fileIds||[]).length>1;
+  return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(x.fileName)+(isG?' <span class="pill">مجموعة '+(x.fileIds||[]).length+'</span>':'')+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+' • <bdi>'+(x.summary?.wordCount||0)+'</bdi> كلمة'+(x.fileDeleted?' • <span style="color:var(--warn)">الأصلي اتحذف</span>':'')+'</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button>'+favStar('summary',d.id,x.fileName)+(canDl?'<button class="btn btn-g" onclick="dlOrig(\''+d.id+'\')">📎</button>':'')+'<button class="btn btn-g" onclick="delRec(\''+d.id+'\')">🗑️</button></div></div>';
 }
 window.filterHome=()=>{
   const q=($('#homeSearch')?$('#homeSearch').value:'').trim().toLowerCase();
@@ -654,7 +654,7 @@ function renderMath(root){
   const MA={'\\implies':'\\Rightarrow','\\iff':'\\Leftrightarrow','\\ne':'\\neq','\\land':'\\wedge','\\lor':'\\vee'};
   root.querySelectorAll('.math').forEach(el=>{
     if(el.dataset.done) return; el.dataset.done='1';
-    let tex=el.dataset.tex||''; tex=tex.replace(/\\\\/g,'\\');
+    const tex=el.dataset.tex||'';
     const disp=el.dataset.disp==='1';
     try{ katex.render(tex,el,{throwOnError:false,displayMode:disp,output:'html',macros:MA}); }
     catch(e){ el.textContent=tex; }
@@ -745,7 +745,7 @@ window.deleteAccount=async()=>{
   try{ const cred=EmailAuthProvider.credential(currentUser.email,cur); await reauthenticateWithCredential(currentUser,cred); }
   catch(e){ return toast('الباسورد غلط، اتلغى الحذف','err'); }
   toast('بمسح بياناتك… استنى شوية','warn');
-  try{ const s=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid))); for(const d of s.docs){ const x=d.data(); if(x.fileId){ try{ await worker('/file/'+x.fileId,{method:'DELETE'}); }catch{} } try{ await deleteDoc(doc(db,'summaries',d.id)); }catch{} } }catch{}
+  try{ const s=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid))); for(const d of s.docs){ const x=d.data(); const ids=x.fileIds|| (x.fileId?[x.fileId]:[]); for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } try{ await deleteDoc(doc(db,'summaries',d.id)); }catch{} } }catch{}
   try{ await worker('/avatar',{method:'DELETE'}); }catch{}
   try{ await deleteDoc(doc(db,'org_roles',currentUser.uid)); }catch{}
   try{ const m=await getDocs(query(collection(db,'members'),where('uid','==',currentUser.uid))); for(const d of m.docs){ try{ await deleteDoc(doc(db,'members',d.id)); }catch{} } }catch{}
@@ -890,9 +890,9 @@ async function createLecture(){
     const su=await worker('/summarize',{method:'POST',signal:t.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:upJ.fileId,lang:'ar',type:'detailed'})});
     const suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل التلخيص');
     updTask(t,85,'بنسّج النتيجة…');
-    const docRef=await addDoc(collection(db,'lectures'),{courseId:cid,name,fileId:upJ.fileId,summary:suJ.summary,provider:suJ.provider,model:suJ.model||'',rawText:suJ.rawText||'',variants:{detailed:suJ.summary},type:'detailed',uploadedBy:currentUser.uid,createdAt:serverTimestamp()});
+    const docRef=await addDoc(collection(db,'lectures'),{courseId:cid,name,fileId:upJ.fileId,fileIds:[upJ.fileId],isGroup:false,summary:suJ.summary,provider:suJ.provider,model:suJ.model||'',rawText:suJ.rawText||'',variants:{detailed:suJ.summary},type:'detailed',uploadedBy:currentUser.uid,createdAt:serverTimestamp()});
     t.progress=100; t.status='done'; t.msg='المحاضرة جاهزة 🎉';
-    t.rec={id:docRef.id,fileName:name,summary:suJ.summary,provider:suJ.provider,model:suJ.model||'',fileSize:0,fileId:upJ.fileId,fileDeleted:false,variants:{detailed:suJ.summary},type:'detailed',rawText:suJ.rawText||'',col:'lectures'};
+    t.rec={id:docRef.id,fileName:name,summary:suJ.summary,provider:suJ.provider,model:suJ.model||'',fileSize:0,fileId:upJ.fileId,fileIds:[upJ.fileId],isGroup:false,fileDeleted:false,variants:{detailed:suJ.summary},type:'detailed',rawText:suJ.rawText||'',col:'lectures'};
     renderTasks(); toast('المحاضرة اترفعت واتلخّصت 🎉','ok');
     if(currentCourse&&currentCourse.id===cid) loadLectures();
   } catch(err){ failTask(t,err); }
@@ -903,7 +903,7 @@ async function loadLectures(){
   LECTURES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
   el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح</button>'+favStar('lecture',x.id,x.name)+actions('lecture',x.id,x.fileId)+'</div></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
 }
-window.openLec=async(id)=>{ let x=LECTURES.find(a=>a.id===id); if(!x){ try{ const d=await getDoc(doc(db,'lectures',id)); if(d.exists()) x={id:d.id,...d.data()}; }catch{} } if(!x)return; META[id]={fileId:x.fileId||null,fileName:x.name,fileDeleted:!x.fileId}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,model:x.model||'',fileSize:0,fileId:x.fileId||null,fileDeleted:!x.fileId,variants:x.variants||{},type:x.type||'detailed',rawText:x.rawText||'',col:'lectures'}); go('res'); };
+window.openLec=async(id)=>{ let x=LECTURES.find(a=>a.id===id); if(!x){ try{ const d=await getDoc(doc(db,'lectures',id)); if(d.exists()) x={id:d.id,...d.data()}; }catch{} } if(!x)return; const ids=x.fileIds||(x.fileId?[x.fileId]:[]); META[id]={fileId:x.fileId||null,fileIds:ids,isGroup:!!x.isGroup,fileName:x.name,fileDeleted:!ids.length}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,model:x.model||'',fileSize:0,fileId:x.fileId||null,fileIds:ids,isGroup:!!x.isGroup,fileDeleted:!ids.length,variants:x.variants||{},type:x.type||'detailed',rawText:x.rawText||'',col:'lectures'}); go('res'); };
 window.openStudents=async()=>{
   if(!currentCollege) return;
   $('#stuTitle').textContent='طلاب '+currentCollege.name;
@@ -945,6 +945,8 @@ window.myCollege=(cid)=>{ const c=MY.find(x=>x.id===cid); if(!c)return; currentC
 window.changeType=async(t)=>{
   const rec=window._lastRec; if(!rec) return;
   if(rec.type===t) return;
+  const ids = rec.fileIds && rec.fileIds.length ? rec.fileIds : (rec.fileId?[rec.fileId]:[]);
+  const canRT = ids.length>0 || !!rec.rawText;
   const vs=Object.assign({},rec.variants||{});
   if(vs[t]){
     rec.summary=vs[t]; rec.type=t; window._lastRec=rec;
@@ -952,12 +954,12 @@ window.changeType=async(t)=>{
     renderResult(rec); toast('اتبدّل للنوع المحفوظ — من غير استهلاك ✓','ok');
     return;
   }
-  if(!rec.fileId && !rec.rawText){ toast('الملف الأصلي اتحذف — مش قادر نولّد نوع جديد','err'); return; }
+  if(!canRT){ toast('الملف الأصلي اتحذف — مش قادر نولّد نوع جديد','err'); return; }
   const tid='rt'+Date.now();
-  const tt={id:tid,name:rec.fileName+' — نوع جديد',status:'active',progress:10,msg:'بيولّد النوع الجديد…',controller:new AbortController(),fileId:null,rec:null,courseId:null};
+  const tt={id:tid,name:rec.fileName+' — نوع جديد',status:'active',progress:10,msg:'بيولّد النوع الجديد…',controller:new AbortController(),fileId:null,fileIds:null,rec:null,courseId:null};
   TASKS[tid]=tt; renderTasks();
   try{
-    const r=await worker('/retype',{method:'POST',signal:tt.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:rec.fileId,type:t,lang:'ar',rawText:rec.rawText||''})});
+    const r=await worker('/retype',{method:'POST',signal:tt.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileIds:ids,type:t,lang:'ar',rawText:rec.rawText||''})});
     const j=await r.json(); if(!r.ok||j.error) throw new Error(j.message||'فشل التوليد');
     tt.progress=90; tt.msg='بنسّج…'; renderTasks();
     vs[t]=j.summary; rec.variants=vs; rec.summary=j.summary; rec.type=t; rec.provider=j.provider; if(j.model)rec.model=j.model;
@@ -985,7 +987,7 @@ window.fillAccount=fillAccount; window.changeName=changeName; window.changePass=
 window.loadFavs=loadFavs; window.toggleFav=toggleFav; window.renderFav=renderFav; window.filterLib=filterLib; window.favStar=favStar;
 window.askConfirm=askConfirm; window.askPrompt=askPrompt; window.cfYes=cfYes; window.cfNo=cfNo; window.prOk=prOk; window.prCancel=prCancel; window.filterHome=filterHome; window.filterMy=filterMy;
 window.changePhoto=changePhoto; window.removePhoto=removePhoto; window.resizeImage=resizeImage; window.loadHeaderAvatar=loadHeaderAvatar;
-window.ensureKatex=ensureKatex; window.renderMath=renderMath; window.extractTextLocal=extractTextLocal; window.runDiag=runDiag; window.changeType=changeType;
+window.ensureKatex=ensureKatex; window.renderMath=renderMath; window.extractTextLocal=extractTextLocal; window.runDiag=runDiag; window.changeType=changeType; window.rmPicked=rmPicked;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
@@ -1043,17 +1045,36 @@ window.addEventListener('popstate',e=>{
 const dz=$('#dz'), fileInput=$('#file');
 ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('on');}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('on');}));
-dz.addEventListener('drop',e=>pick(e.dataTransfer.files[0]));
-fileInput.addEventListener('change',e=>pick(e.target.files[0]));
-function pick(f){
-  if(!f) return;
-  if(f.size>MAX_MB*1024*1024) return toast('الملف أكبر من '+MAX_MB+' ميجابايت','err');
-  const ok=f.type==='application/pdf'||f.type==='text/plain'||f.type.startsWith('image/')||/\.(pdf|txt|png|jpe?g|webp)$/i.test(f.name);
-  if(!ok) return toast('نوع الملف غير مدعوم','err');
-  pickedFile=f; if(pickedURL)URL.revokeObjectURL(pickedURL); pickedURL=f.type.startsWith('image/')?URL.createObjectURL(f):null;
-  $('#picked').innerHTML='<div class="chip">'+(pickedURL?'<img src="'+pickedURL+'" style="width:40px;height:40px;object-fit:cover;border-radius:10px">':'📄')+' <div><b>'+esc(f.name)+'</b><br><small style="color:var(--muted)">'+fmt(f.size)+'</small></div></div>';
+dz.addEventListener('drop',e=>pickMulti(e.dataTransfer.files));
+fileInput.addEventListener('change',e=>pickMulti(e.target.files));
+function pickMulti(list){
+  const arr=[...list];
+  for(const f of arr){
+    if(!f) continue;
+    if(pickedFiles.length>=MAX_FILES){ toast('الحد الأقصى '+MAX_FILES+' ملفات في المجموعة','warn'); break; }
+    if(f.size>MAX_MB*1024*1024){ toast(f.name+' أكبر من '+MAX_MB+' ميجابايت','err'); continue; }
+    const ok=f.type==='application/pdf'||f.type==='text/plain'||f.type.startsWith('image/')||/\.(pdf|txt|png|jpe?g|webp)$/i.test(f.name);
+    if(!ok){ toast(f.name+': نوع غير مدعوم','err'); continue; }
+    const tot=pickedFiles.reduce((s,x)=>s+x.size,0)+f.size;
+    if(tot>TOTAL_MB*1024*1024){ toast('مجموع الحجم تجاوز '+TOTAL_MB+' ميجابايت','err'); continue; }
+    pickedFiles.push(f);
+  }
+  renderPicked();
+}
+function renderPicked(){
+  const el=$('#picked'); if(!el) return;
+  if(!pickedFiles.length){ el.innerHTML=''; $('#go').disabled=true; return; }
+  const tot=pickedFiles.reduce((s,x)=>s+x.size,0);
+  let h='<div style="margin-top:12px;display:grid;gap:8px">';
+  pickedFiles.forEach((f,i)=>{
+    const url=f.type.startsWith('image/')?URL.createObjectURL(f):null;
+    h+='<div class="chip" style="justify-content:space-between;width:100%;margin:0">'+(url?'<img src="'+url+'" style="width:36px;height:36px;object-fit:cover;border-radius:9px">':'📄')+'<div style="flex:1;min-width:0"><b style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(f.name)+'</b><small style="color:var(--muted)">'+fmt(f.size)+'</small></div><button class="btn btn-g" onclick="rmPicked('+i+')">✕</button></div>';
+  });
+  h+='</div><p style="color:var(--muted);font-size:12px;margin-top:8px">'+pickedFiles.length+' ملف • المجموع '+fmt(tot)+(pickedFiles.length>1?' • هتتلخّص كملخص واحد مدمج':'')+'</p>';
+  el.innerHTML=h;
   $('#go').disabled=false;
 }
+window.rmPicked=i=>{ pickedFiles.splice(i,1); renderPicked(); };
 const ldz=$('#ldz'), lfile=$('#lfile');
 ['dragenter','dragover'].forEach(ev=>ldz.addEventListener(ev,e=>{e.preventDefault();ldz.classList.add('on');}));
 ['dragleave','drop'].forEach(ev=>ldz.addEventListener(ev,e=>{e.preventDefault();ldz.classList.remove('on');}));
@@ -1075,35 +1096,51 @@ async function worker(path,opts={}){
   return res;
 }
 window.summarize=async()=>{
-  if(!pickedFile||!currentUser) return;
-  const f=pickedFile, lang=$('#sLang').value, typ=$('#sType').value; pickedFile=null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
-  const t=newTask(f.name);
+  if(!pickedFiles.length||!currentUser) return;
+  const files=pickedFiles.slice(); const lang=$('#sLang').value, typ=$('#sType').value;
+  pickedFiles=[]; renderPicked(); $('#go').disabled=true; fileInput.value='';
+  const t=newTask(files.length>1?(files.length+' ملفات') : files[0].name);
   try {
-    updTask(t,8,'بيقرأ النص محليًا (ممكن ياخد ثواني)…');
-    let sendFile=f, sendType=f.type||'application/octet-stream', sendName=f.name;
-    try{ const txt=await extractTextLocal(f); if(txt&&txt.replace(/\s/g,'').length>=80){ sendFile=new Blob([txt],{type:'text/plain;charset=utf-8'}); sendType='text/plain;charset=utf-8'; sendName=f.name.replace(/\.[^.]+$/,'')+'.txt'; } }catch(e){}
-    if(t.controller.signal.aborted) return;
-    const up=await worker('/file',{method:'PUT',signal:t.controller.signal,headers:{'X-File-Name':encodeURIComponent(sendName),'Content-Type':sendType},body:sendFile});
-    const upJ=await up.json(); if(!up.ok) throw new Error(upJ.message||'فشل رفع الملف');
-    t.fileId=upJ.fileId; updTask(t,45,'الذكاء بيفهم ويولّد الملخص…');
-    const su=await worker('/summarize',{method:'POST',signal:t.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:upJ.fileId,lang,type:typ})});
-    const suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل التلخيص');
+    const ids=[]; const names=[];
+    for(let i=0;i<files.length;i++){
+      const f=files[i];
+      updTask(t, 5+Math.floor(40*i/files.length), 'برفع ('+(i+1)+'/'+files.length+')…');
+      let sendFile=f, sendType=f.type||'application/octet-stream', sendName=f.name;
+      try{ const txt=await extractTextLocal(f); if(txt&&txt.replace(/\s/g,'').length>=80){ sendFile=new Blob([txt],{type:'text/plain;charset=utf-8'}); sendType='text/plain;charset=utf-8'; sendName=f.name.replace(/\.[^.]+$/,'')+'.txt'; } }catch(e){}
+      if(t.controller.signal.aborted) return;
+      const up=await worker('/file',{method:'PUT',signal:t.controller.signal,headers:{'X-File-Name':encodeURIComponent(sendName),'Content-Type':sendType},body:sendFile});
+      const upJ=await up.json(); if(!up.ok) throw new Error(upJ.message||('فشل رفع '+f.name));
+      ids.push(upJ.fileId); names.push(f.name);
+    }
+    t.fileIds=ids;
+    updTask(t,50,'الذكاء بيفهم ويولّد الملخص…');
+    let suJ;
+    if(ids.length===1){
+      const su=await worker('/summarize',{method:'POST',signal:t.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:ids[0],lang,type:typ})});
+      suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل التلخيص');
+    } else {
+      const su=await worker('/summarize-group',{method:'POST',signal:t.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileIds:ids,lang,type:typ})});
+      suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل تلخيص المجموعة');
+    }
     updTask(t,85,'بنسّج النتيجة…');
-    const docRef=await addDoc(collection(db,'summaries'),{uid:currentUser.uid,fileName:f.name,fileType:sendType,fileSize:sendFile.size,fileId:upJ.fileId,provider:suJ.provider,model:suJ.model||'',summary:suJ.summary,rawText:suJ.rawText||'',variants:{[typ]:suJ.summary},type:typ,fileDeleted:false,createdAt:serverTimestamp()});
+    const fileName = ids.length===1? names[0] : (names.length+' ملفات: '+names.slice(0,2).join('، ')+(names.length>2?'…':''));
+    const docData={uid:currentUser.uid,fileName,fileSize:0,fileId:ids.length===1?ids[0]:null,fileIds:ids,isGroup:ids.length>1,provider:suJ.provider,model:suJ.model||'',summary:suJ.summary,rawText:suJ.rawText||'',variants:{[typ]:suJ.summary},type:typ,fileDeleted:false,createdAt:serverTimestamp()};
+    const docRef=await addDoc(collection(db,'summaries'),docData);
+    META[docRef.id]={fileId:docData.fileId,fileIds:ids,isGroup:docData.isGroup,fileName,fileDeleted:false};
     t.progress=100; t.status='done'; t.msg='الملخص جاهز 🎉';
-    META[docRef.id]={fileId:upJ.fileId,fileName:f.name,fileDeleted:false};
-    t.rec={id:docRef.id,fileName:f.name,summary:suJ.summary,provider:suJ.provider,model:suJ.model||'',fileSize:sendFile.size,fileId:upJ.fileId,fileDeleted:false,variants:{[typ]:suJ.summary},type:typ,rawText:suJ.rawText||'',col:'summaries'};
+    t.rec={id:docRef.id,fileName,summary:suJ.summary,provider:suJ.provider,model:suJ.model||'',fileSize:0,fileId:docData.fileId,fileIds:ids,isGroup:docData.isGroup,fileDeleted:false,variants:{[typ]:suJ.summary},type:typ,rawText:suJ.rawText||'',col:'summaries'};
     renderTasks(); toast('الملخص جاهز 🎉','ok'); loadLibrary(); loadStats();
   } catch(err){ failTask(t,err); }
 };
 window.toggleAcc=el=>el.parentElement.classList.toggle('open');
 function renderResult(rec){
   const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter','openrouter-vision':'OpenRouter Vision','cloudflare-ai':'Cloudflare AI'}[rec.provider]||rec.provider;
-  const canDl=rec.fileId&&!rec.fileDeleted; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
+  const ids = rec.fileIds && rec.fileIds.length ? rec.fileIds : (rec.fileId?[rec.fileId]:[]);
+  const canDl=ids.length===1&&!rec.fileDeleted; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
   const vs=Object.assign({},rec.variants||{});
   if(!rec.type&&rec.summary)vs.detailed=vs.detailed||rec.summary;
   const cur=rec.type||'detailed';
-  const canRT=canDl||!!rec.rawText;
+  const canRT=ids.length>0||!!rec.rawText;
   const TYPES=[['detailed','📄 مفصل'],['quick','⚡ سريع'],['exam','❓ أسئلة'],['simple','🧒 مبسّط']];
   let typeBar='<div class="rtypes">';
   TYPES.forEach(([tt,label])=>{
@@ -1115,7 +1152,7 @@ function renderResult(rec){
     typeBar+='<button class="'+cls+'"'+dis+' onclick="changeType(\''+tt+'\')">'+label+'<span class="rb">'+badge+'</span></button>';
   });
   typeBar+='</div>';
-  let html='<div class="head"><div><button class="btn btn-g" onclick="goBack()" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  let html='<div class="head"><div><button class="btn btn-g" onclick="goBack()" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+(rec.isGroup?' <span class="pill p">مجموعة '+(rec.fileIds||[]).length+' ملفات</span>':'')+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
   if(canDl) html+='<button class="btn btn-s" onclick="dlOrig(\''+rec.id+'\')">📎 الملف الأصلي</button>';
   html+='<button class="btn btn-s" onclick="copySum()">📋 نسخ</button><button class="btn btn-s" onclick="dlSum()">⬇️ الملخص</button></div></div>';
   html+=typeBar;
@@ -1134,12 +1171,12 @@ function renderResult(rec){
 }
 window.copySum=async()=>{ const t=mdText(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ Markdown','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
 window.dlSum=()=>{ const h=buildExportHTML(window._lastRec); const b=new Blob([h],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(window._lastRec.fileName.replace(/\.[^.]+$/,''))+'-ملخص.html'; a.click(); toast('اتحمّل ملف منظم (HTML)','ok'); };
-window.dlOrig=async(docId)=>{ const m=META[docId]; if(!m||!m.fileId) return toast('الملف الأصلي مش متاح','err'); try{ const r=await worker('/file/'+m.fileId,{method:'GET'}); if(!r.ok) throw new Error('الملف مش متاح'); const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الأصلي','ok'); }catch(e){ toast(e.message,'err'); } };
+window.dlOrig=async(docId)=>{ const m=META[docId]; const fid=m&&m.fileId; if(!fid) return toast('الملف الأصلي مش متاح (أو مجموعة — حمّل من المكتبتي)', 'err'); try{ const r=await worker('/file/'+fid,{method:'GET'}); if(!r.ok) throw new Error('الملف مش متاح'); const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الأصلي','ok'); }catch(e){ toast(e.message,'err'); } };
 function plain(r){ const s=r.summary||{}; let o='ملخص: '+r.fileName+'\n\n'; if(s.tldr&&s.tldr.length){o+='أهم 3 نقاط:\n'+s.tldr.map(t=>'- '+t).join('\n')+'\n\n';} o+=(s.overview||'')+'\n\n'; (s.sections||[]).forEach(x=>{ o+='## '+x.heading+'\n'+(x.points||[]).map(p=>'- '+p).join('\n')+'\n\n'; }); (s.terms||[]).forEach(t=>o+='- '+t.term+': '+t.definition+'\n'); o+='\nأسئلة:\n'+(s.questions||[]).map((q,i)=>(i+1)+'. '+q).join('\n'); return o; }
 async function loadStats(){
   const snap=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid)));
   const docs=snap.docs.sort((a,b)=>ts(b)-ts(a));
-  docs.forEach(d=>{ const x=d.data(); META[d.id]={fileId:x.fileId,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; });
+  docs.forEach(d=>{ const x=d.data(); META[d.id]={fileId:x.fileId,fileIds:x.fileIds||[],isGroup:!!x.isGroup,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; });
   const n=docs.length; const words=docs.reduce((s,d)=>s+(d.data().summary?.wordCount||0),0);
   $('#stats').innerHTML='<div class="feat"><div class="ic">📄</div><h3><bdi>'+n+'</bdi></h3><p>ملخصاتك</p></div><div class="feat"><div class="ic">📖</div><h3><bdi>'+words.toLocaleString('ar-EG')+'</bdi></h3><p>كلمات اتلخصت</p></div><div class="feat"><div class="ic">⏱️</div><h3><bdi>'+Math.round(words/180)+'</bdi></h3><p>دقائق مذاكرة وفّرتها</p></div>';
   const recent=docs.slice(0,4);
@@ -1147,22 +1184,22 @@ async function loadStats(){
   HOME_DOCS=docs;
   filterHome();
 }
-function rowHtml(d){ const x=d.data(); return '<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 10px"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+'</small></div><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button></div>'; }
-window.openRec=async id=>{ const d=await getDoc(doc(db,'summaries',id)); if(d.exists()){ const x=d.data(); META[id]={fileId:x.fileId,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; renderResult({id,...x,col:'summaries'}); go('res'); } };
+function rowHtml(d){ const x=d.data(); const isG=x.isGroup&&(x.fileIds||[]).length>1; return '<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 10px"><div><b>'+esc(x.fileName)+(isG?' <span class="pill">مجموعة</span>':'')+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+'</small></div><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button></div>'; }
+window.openRec=async id=>{ const d=await getDoc(doc(db,'summaries',id)); if(d.exists()){ const x=d.data(); META[id]={fileId:x.fileId,fileIds:x.fileIds||[],isGroup:!!x.isGroup,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; renderResult({id,...x,col:'summaries'}); go('res'); } };
 async function lazyCleanup(docs){
-  const old=docs.filter(d=>{ const x=d.data(); return !x.fileDeleted&&x.fileId&&ageDays(x)>RETENTION_DAYS; });
+  const old=docs.filter(d=>{ const x=d.data(); return !x.fileDeleted&&(x.fileIds||[]).length&&ageDays(x)>RETENTION_DAYS; });
   if(!old.length) return;
-  await Promise.all(old.map(async d=>{ try{ await worker('/file/'+d.data().fileId,{method:'DELETE'}); }catch{} try{ await updateDoc(doc(db,'summaries',d.id),{fileDeleted:true}); }catch{} if(META[d.id])META[d.id].fileDeleted=true; }));
+  await Promise.all(old.map(async d=>{ const x=d.data(); const ids=x.fileIds||[]; for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } try{ await updateDoc(doc(db,'summaries',d.id),{fileDeleted:true}); }catch{} if(META[d.id])META[d.id].fileDeleted=true; }));
 }
 async function loadLibrary(){
   const snap=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid)));
   const docs=snap.docs.sort((a,b)=>ts(b)-ts(a));
-  docs.forEach(d=>{ const x=d.data(); META[d.id]={fileId:x.fileId,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; });
+  docs.forEach(d=>{ const x=d.data(); META[d.id]={fileId:x.fileId,fileIds:x.fileIds||[],isGroup:!!x.isGroup,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; });
   await lazyCleanup(docs);
   LIB_DOCS=docs;
   filterLib();
 }
-window.delRec=async(id)=>{ if(!await askConfirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} if(m.fileId){ try{ await worker('/file/'+m.fileId,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
+window.delRec=async(id)=>{ if(!await askConfirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} const ids=m.fileIds|| (m.fileId?[m.fileId]:[]); for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
 if(matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
 </script>
 </body>
