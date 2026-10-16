@@ -221,6 +221,8 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <p style="color:var(--muted);font-size:13px;margin-top:12px">الملف بيكمّل في الخلفية — تقدر تكمّل تصفح الموقع، وتلغي في أي وقت من الشريط تحت.</p>
 </div>
 </div>
+<div style="margin-top:14px;text-align:center"><button class="btn btn-s" onclick="runDiag()">🔍 افحص مفاتيح Gemini (تشخيص)</button></div>
+<div id="diagOut" class="hidden"></div>
 </section>
 <section id="v-proc" class="hidden">
 <div class="card" style="max-width:640px;margin:30px auto">
@@ -610,6 +612,24 @@ async function extractTextLocal(file){
   if(isPdf) return await ocrPdf(file);
   return '';
 }
+window.runDiag=async()=>{
+  const box=$('#diagOut'); if(!box) return;
+  box.classList.remove('hidden');
+  box.innerHTML='<div class="empty">بفحص مفاتيحك عند جوجل… استنى ١٠ ثواني</div>';
+  try{
+    const r=await worker('/diag',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
+    const j=await r.json();
+    if(!r.ok||!j.result){box.innerHTML='<div class="empty">خطأ في الفحص: '+esc(j.message||('HTTP '+r.status))+'</div>';return;}
+    let h='<div class="card" style="margin-top:12px"><div class="head"><h1 style="font-size:17px">نتيجة فحص مفاتيح Gemini — عددهم: '+j.keys+'</h1></div>';
+    j.result.forEach((row,i)=>{
+      h+='<div style="margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:10px"><b>مفتاح '+(i+1)+' </b><span class="pill">'+esc(row.key||'')+'</span>';
+      Object.keys(row).forEach(k=>{ if(k==='key')return; const v=String(row[k]); const good=v.indexOf('200')===0; h+='<div style="font-size:12px;margin:4px 0"><bdi>'+esc(k)+'</bdi>: <span style="color:'+(good?'var(--ok)':'var(--err)')+'"><bdi>'+esc(v)+'</bdi></span></div>'; });
+      h+='</div>';
+    });
+    h+='<p style="color:var(--muted);font-size:12px;margin:6px 0 0">كل سطر أحمر يبدأ بـ <b>429</b> = جوجل بيقول للمفتاح "خلصت حصتك" (مش غلط كود). أي سطر أخضر يبدأ بـ <b>200</b> = المفتاح شغال، والغلط في معالجتي للصور.</p></div>';
+    box.innerHTML=h;
+  }catch(e){box.innerHTML='<div class="empty">فشل الاتصال: '+esc(e.message||e)+'</div>';}
+};
 
 let _katexPromise=null;
 function ensureKatex(){
