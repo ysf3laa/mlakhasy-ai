@@ -67,7 +67,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 .prog>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),#7c3aed);transition:width .4s}
 .pill{display:inline-flex;padding:5px 12px;border-radius:999px;font-size:12px;font-weight:800;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
 .pill.p{background:var(--soft);color:var(--primary);border-color:transparent}
-.avatar{width:64px;height:64px;border-radius:50%;background:var(--soft);color:var(--primary);display:grid;place-items:center;font-size:28px;font-weight:800;flex-shrink:0}
+.avatar{width:64px;height:64px;border-radius:50%;background:var(--soft);color:var(--primary);display:grid;place-items:center;font-size:28px;font-weight:800;flex-shrink:0;overflow:hidden}
 .sec-block{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:14px}
 .sec-block h4{margin:0 0 10px;font-size:18px;color:var(--primary)}
 .sec-block ul{margin:0;padding-inline-start:20px;line-height:1.9}
@@ -149,6 +149,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <div class="logo"><div class="logo-badge">✦</div> ملخّصي</div>
 <div class="nav-links">
 <button class="btn btn-g" onclick="toggleTheme()">🌓</button>
+<img id="navAv" class="hidden" alt="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;border:1px solid var(--border)">
 <span class="pill" id="navEmail"></span>
 <button class="btn btn-s" onclick="logout()">خروج</button>
 </div>
@@ -252,12 +253,15 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <div><b id="avName">—</b><br><small style="color:var(--muted)" id="avEmail">—</small><br><span class="pill" id="avRole">طالب</span></div>
 </div>
 <div class="field"><label>الاسم</label><div style="display:flex;gap:8px"><input class="inp" id="acName"><button class="btn btn-p" onclick="changeName()">حفظ</button></div></div>
+<div class="field"><label>صورة البروفايل</label>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="changePhoto()">🖼️ غيّر الصورة</button><button class="btn btn-g" onclick="removePhoto()">إزالة</button></div>
+<small style="color:var(--muted);font-size:12px">بتتضغط تلقائيًا لـ 512px عشان تفضل خفيفة.</small>
+</div>
 <div class="field"><label>تغيير كلمة المرور</label><input class="inp" id="acCur" type="password" placeholder="كلمة المرور الحالية" style="margin-bottom:8px"><input class="inp" id="acNew" type="password" placeholder="كلمة المرور الجديدة (6 حروف+)"><button class="btn btn-s" style="margin-top:8px" onclick="changePass()">تحديث كلمة المرور</button></div>
-<p style="color:var(--muted);font-size:13px;margin:0">🖼️ صورة البروفايل: <b>قريبًا</b> (المرحلة الجاية — رفع على R2).</p>
 </div>
 <div class="card">
 <div class="head"><h1 style="font-size:18px">⚠️ منطقة الخطر</h1></div>
-<p style="color:var(--muted);font-size:14px">حذف الحساب بيمسح كل ملخصاتك وانضماماتك وملفاتك نهائيًا. مش هتقدر ترجّعها.</p>
+<p style="color:var(--muted);font-size:14px">حذف الحساب بيمسح كل ملخصاتك وانضماماتك وملفاتك وصورتك نهائيًا. مش هتقدر ترجّعها.</p>
 <button class="btn" style="background:var(--err);color:#fff;width:100%" onclick="deleteAccount()">🗑️ احذف حسابي نهائيًا</button>
 </div>
 </div>
@@ -334,7 +338,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <button class="btn btn-p" style="width:100%" onclick="saveEdit()">💾 احفظ</button>
 </div></div>
 <div class="modal hidden" id="docModal"><div class="modal-card">
-<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">🧑‍🏫 تعيين دكتور</h1><button class="btn btn-g" onclick="closeDoc()">✕</button></div>
+<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">🧑‍ تعيين دكتور</h1><button class="btn btn-g" onclick="closeDoc()">✕</button></div>
 <div class="field"><label>بريد الدكتور الإلكتروني</label><input class="inp" id="docEmail" type="email" placeholder="example@mail.com"></div>
 <p style="color:var(--muted);font-size:13px;margin-bottom:12px">الدكتور هيبقى مسؤول عن كل المواد والطلاب في هذه الكلية. لازم يكون عمل حساب بالبريد ده الأول.</p>
 <button class="btn btn-p" style="width:100%" onclick="appointDoctor()">عيّن دكتور</button>
@@ -382,6 +386,7 @@ let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
 let FAVS=new Set(), FAV_TITLES={}, FAV_REG={}, LIB_DOCS=[], HOME_DOCS=[];
 let editType=null, editId=null, editFileId=null;
+let myPhotoUrl='';
 const TASKS={}; let taskSeq=0;
 
 function renderTasks(){
@@ -409,13 +414,14 @@ async function ensureUserDoc(){
   try{
     const ref=doc(db,'users',currentUser.uid);
     const ex=await getDoc(ref);
-    if(!ex.exists()) await setDoc(ref,{uid:currentUser.uid,email:(currentUser.email||'').toLowerCase(),name:currentUser.displayName||'',role:'student',createdAt:serverTimestamp()});
+    if(!ex.exists()) await setDoc(ref,{uid:currentUser.uid,email:(currentUser.email||'').toLowerCase(),name:currentUser.displayName||'',role:'student',photoUrl:'',createdAt:serverTimestamp()});
   }catch(e){}
 }
 async function loadRole(){
   if(!currentUser) return;
+  myPhotoUrl='';
   let ur='student', docOf=[], memOf=[];
-  try{ const d=await getDoc(doc(db,'users',currentUser.uid)); if(d.exists()&&d.data().role==='admin') ur='admin'; }catch{}
+  try{ const d=await getDoc(doc(db,'users',currentUser.uid)); if(d.exists()){ if(d.data().role==='admin') ur='admin'; myPhotoUrl=d.data().photoUrl||''; } }catch{}
   if(ur!=='admin'){
     try{ const o=await getDoc(doc(db,'org_roles',currentUser.uid)); if(o.exists()){ const od=o.data(); docOf=od.doctorOf||[]; memOf=od.memberOf||[]; if(docOf.length) ur='doctor'; } }catch{}
   }
@@ -519,12 +525,42 @@ window.filterMy=()=>{
   const list=q?MY.filter(x=>((x.name||'')+' '+(x.code||'')).toLowerCase().includes(q)):MY;
   el.innerHTML=list.length?list.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="myCollege(\''+x.id+'\')">ادخل الكلية ←</button></div>').join(''):'<div class="empty">مفيش نتائج لـ "'+esc(q)+'"</div>';
 };
+
+function resizeImage(file,max){ return new Promise((res,rej)=>{ const img=new Image(); const u=URL.createObjectURL(file); img.onload=()=>{ let w=img.width,h=img.height; if(w>h){ if(w>max){h=Math.round(h*max/w);w=max;} } else { if(h>max){w=Math.round(w*max/h);h=max;} } const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); c.toBlob(b=>{ URL.revokeObjectURL(u); if(b)res(b); else rej(new Error('فشل الضغط')); },'image/jpeg',0.85); }; img.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error('فشل قراءة الصورة')); }; img.src=u; }); }
+function loadHeaderAvatar(){ const n=$('#navAv'); if(!n) return; if(myPhotoUrl){ n.src=myPhotoUrl; n.classList.remove('hidden'); } else { n.classList.add('hidden'); n.removeAttribute('src'); } }
+window.changePhoto=async()=>{
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange=async()=>{
+    const f=inp.files[0]; if(!f) return;
+    if(!f.type.startsWith('image/')) return toast('لازم صورة','err');
+    if(f.size>8*1024*1024) return toast('الصورة أكبر من 8 ميجا','err');
+    try{
+      toast('برفع الصورة…','warn');
+      const blob=await resizeImage(f,512);
+      const r=await worker('/avatar',{method:'PUT',headers:{'Content-Type':'image/jpeg'},body:blob});
+      const j=await r.json(); if(!r.ok||j.error) throw new Error(j.message||'فشل الرفع');
+      const u=WORKER_URL+'/avatar/'+currentUser.uid+'?v='+Date.now();
+      await setDoc(doc(db,'users',currentUser.uid),{photoUrl:u},{merge:true});
+      myPhotoUrl=u; toast('الصورة اترفعت ✓','ok'); fillAccount(); loadHeaderAvatar();
+    }catch(e){ toast('فشل: '+(e.message||e),'err'); }
+  };
+  inp.click();
+};
+window.removePhoto=async()=>{
+  if(!await askConfirm('تحذف صورة البروفايل؟')) return;
+  try{ await worker('/avatar',{method:'DELETE'}); }catch{}
+  await setDoc(doc(db,'users',currentUser.uid),{photoUrl:''},{merge:true});
+  myPhotoUrl=''; toast('الصورة اتمسحت','ok'); fillAccount(); loadHeaderAvatar();
+};
+
 function fillAccount(){
   if(!currentUser) return;
   $('#acName').value = currentUser.displayName || '';
   $('#avName').textContent = currentUser.displayName || '—';
   $('#avEmail').textContent = currentUser.email || '—';
-  $('#avCircle').textContent = ((currentUser.displayName||'؟').trim().charAt(0)||'؟').toUpperCase();
+  const av=$('#avCircle');
+  if(myPhotoUrl){ av.innerHTML='<img src="'+myPhotoUrl+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">'; }
+  else { av.textContent = ((currentUser.displayName||'؟').trim().charAt(0)||'؟').toUpperCase(); }
   $('#avRole').textContent = userRole==='admin'?'أدمن':(userRole==='doctor'?'دكتور':'طالب');
 }
 window.changeName=async()=>{
@@ -547,13 +583,14 @@ window.changePass=async()=>{
 };
 window.deleteAccount=async()=>{
   if(!await askConfirm('متأكد؟ الحذف نهائي ومش هيرجع.')) return;
-  if(!await askConfirm('آخر تأكيد: كل ملخصاتك وملفاتك وانضماماتك هتتمسح. تكمّل؟')) return;
+  if(!await askConfirm('آخر تأكيد: كل ملخصاتك وملفاتك وانضماماتك وصورتك هتتمسح. تكمّل؟')) return;
   const cur=await askPrompt('اكتب باسوردك عشان نأكد الحذف','',true);
   if(!cur) return toast('اتلغى','warn');
   try{ const cred=EmailAuthProvider.credential(currentUser.email,cur); await reauthenticateWithCredential(currentUser,cred); }
   catch(e){ return toast('الباسورد غلط، اتلغى الحذف','err'); }
   toast('بمسح بياناتك… استنى شوية','warn');
   try{ const s=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid))); for(const d of s.docs){ const x=d.data(); if(x.fileId){ try{ await worker('/file/'+x.fileId,{method:'DELETE'}); }catch{} } try{ await deleteDoc(doc(db,'summaries',d.id)); }catch{} } }catch{}
+  try{ await worker('/avatar',{method:'DELETE'}); }catch{}
   try{ await deleteDoc(doc(db,'org_roles',currentUser.uid)); }catch{}
   try{ const m=await getDocs(query(collection(db,'members'),where('uid','==',currentUser.uid))); for(const d of m.docs){ try{ await deleteDoc(doc(db,'members',d.id)); }catch{} } }catch{}
   try{ const f=await getDocs(query(collection(db,'favorites'),where('uid','==',currentUser.uid))); for(const d of f.docs){ try{ await deleteDoc(doc(db,'favorites',d.id)); }catch{} } }catch{}
@@ -753,6 +790,7 @@ window.openDoc=openDoc; window.closeDoc=closeDoc; window.appointDoctor=appointDo
 window.fillAccount=fillAccount; window.changeName=changeName; window.changePass=changePass; window.deleteAccount=deleteAccount;
 window.loadFavs=loadFavs; window.toggleFav=toggleFav; window.renderFav=renderFav; window.filterLib=filterLib; window.favStar=favStar;
 window.askConfirm=askConfirm; window.askPrompt=askPrompt; window.cfYes=cfYes; window.cfNo=cfNo; window.prOk=prOk; window.prCancel=prCancel; window.filterHome=filterHome; window.filterMy=filterMy;
+window.changePhoto=changePhoto; window.removePhoto=removePhoto; window.resizeImage=resizeImage; window.loadHeaderAvatar=loadHeaderAvatar;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
@@ -770,8 +808,8 @@ function hideBoot(){ if(booted)return; booted=true; const b=$('#boot'); if(b) b.
 onAuthStateChanged(auth,u=>{
   hideBoot();
   currentUser=u;
-  if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#mainNav').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; loadFavs(); go('dash'); loadLibrary(); loadRole(); loadMy(); }
-  else { $('#gate').classList.remove('hidden'); $('#mainNav').classList.add('hidden'); $('#app').classList.add('hidden'); }
+  if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#mainNav').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; loadFavs(); go('dash'); loadLibrary(); loadRole().then(()=>{ loadHeaderAvatar(); fillAccount(); }); loadMy(); }
+  else { $('#gate').classList.remove('hidden'); $('#mainNav').classList.add('hidden'); $('#app').classList.add('hidden'); myPhotoUrl=''; loadHeaderAvatar(); }
 });
 setTimeout(hideBoot,5000);
 function applyView(v){
