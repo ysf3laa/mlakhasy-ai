@@ -157,6 +157,24 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 }
 </style>
 </head>
+<script>
+(function(){
+  function show(m){
+    var b=document.getElementById('boot');
+    if(!b) return;
+    b.innerHTML='<div style="max-width:520px;margin:40px auto;padding:22px;border-radius:18px;background:#fff;border:2px solid #f43f5e;color:#0f172a;font-family:Tajawal,sans-serif;text-align:right;direction:rtl;box-shadow:0 8px 30px rgba(0,0,0,.12)"><b style="color:#f43f5e;font-size:18px">⛔ في خطأ في الكود — الصفحة وقفت</b><p style="margin:10px 0 0;line-height:1.9;word-break:break-word">'+String(m)+'</p><p style="margin:14px 0 0;color:#64748b;font-size:13px">غالبًا الـ paste اتقطع أو فيه حرف ناقص. الحل: افتح الملف، Select All، احذف كله، والصق النسخة الكاملة من تاني، وتأكد إن آخر سطر هو <code>&lt;/html&gt;</code> بالظبط.</p></div>';
+  }
+  window.__bootErr=show;
+  window.onerror=function(msg,src,line,col){ show(msg+' (سطر '+line+(col?('، عمود '+col):'')+')'); };
+  window.addEventListener('unhandledrejection',function(e){ var r=e&&e.reason; show('Promise error: '+((r&&(r.message||r.code))||r)); });
+  setTimeout(function(){
+    var app=document.getElementById('app'), gate=document.getElementById('gate');
+    if(app&&app.classList.contains('hidden')&&gate&&gate.classList.contains('hidden')){
+      show('الـ JavaScript ما اشتغلش خالص (مفيش خطأ واضح = الأغلب إن الملف اتقطع أثناء النسخ واللصق، أو الـ CDN بتاع Firebase ماوصلش). جرّب تقفل VPN وتفتح على Wi-Fi، ولو فضل فاضي فالملف نفسه ناقص.');
+    }
+  },8000);
+})();
+</script>
 <body>
 <div class="toast" id="toast"></div>
 <div class="tasks" id="tasks"></div>
@@ -1202,5 +1220,6 @@ async function loadLibrary(){
 window.delRec=async(id)=>{ if(!await askConfirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} const ids=m.fileIds|| (m.fileId?[m.fileId]:[]); for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
 if(matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
 </script>
+
 </body>
 </html>
