@@ -187,7 +187,9 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <section id="v-dash">
 <div class="head"><div><h1 id="welcome">أهلًا 👋</h1><p>جاهز نلخّص محاضرتك الجاية؟</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع ملف</button></div>
 <div class="grid3" id="stats"></div>
-<div class="card" style="margin-top:18px"><div class="head"><h1 style="font-size:20px">آخر الملخصات</h1></div><div id="recent"></div></div>
+<div class="field" style="margin:14px 0 0"><input class="inp" id="homeSearch" placeholder="🔍 ابحث في ملخصاتك وكلياتك…" oninput="filterHome()"></div>
+<div id="homeResults" class="hidden"></div>
+<div class="card" id="recentCard" style="margin-top:18px"><div class="head"><h1 style="font-size:20px">آخر الملخصات</h1></div><div id="recent"></div></div>
 </section>
 <section id="v-upload" class="hidden">
 <div class="head"><div><h1>ارفع ملفك</h1><p>ملف أو صورة أو نص — حتى <bdi>30</bdi> ميجابايت</p></div></div>
@@ -226,6 +228,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 </section>
 <section id="v-my" class="hidden">
 <div class="head"><div><h1>موادي</h1><p>الكليات اللي انضميت ليها</p></div><button class="btn btn-p" onclick="go('join')">🔑 انضمام بكود</button></div>
+<div class="field" style="margin-bottom:14px"><input class="inp" id="mySearch" placeholder="🔍 ابحث في كلياتك…" oninput="filterMy()"></div>
 <div id="myList"></div>
 </section>
 <section id="v-join" class="hidden">
@@ -336,6 +339,15 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <p style="color:var(--muted);font-size:13px;margin-bottom:12px">الدكتور هيبقى مسؤول عن كل المواد والطلاب في هذه الكلية. لازم يكون عمل حساب بالبريد ده الأول.</p>
 <button class="btn btn-p" style="width:100%" onclick="appointDoctor()">عيّن دكتور</button>
 </div></div>
+<div class="modal hidden" id="cfModal"><div class="modal-card" style="text-align:center">
+<h1 style="font-size:19px;margin:0 0 16px" id="cfMsg">تأكيد</h1>
+<div style="display:flex;gap:10px"><button class="btn btn-s" style="flex:1" onclick="cfNo()">إلغاء</button><button class="btn" style="flex:1;background:var(--err);color:#fff" onclick="cfYes()">تأكيد</button></div>
+</div></div>
+<div class="modal hidden" id="prModal"><div class="modal-card">
+<h1 style="font-size:19px;margin:0 0 14px" id="prMsg">إدخال</h1>
+<div class="field"><input class="inp" id="prInput" type="text"></div>
+<div style="display:flex;gap:10px"><button class="btn btn-s" style="flex:1" onclick="prCancel()">إلغاء</button><button class="btn btn-p" style="flex:1" onclick="prOk()">موافق</button></div>
+</div></div>
 <script type="module">
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDVSVBU-HIH4iLQbJuQ_XTCRXGr6SSKc3Y",
@@ -368,7 +380,7 @@ let userRole='student', backTo='course', readOnly=false, canLec=false, canManage
 let myDoctorOf=[], myMemberOf=[];
 let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
-let FAVS=new Set(), FAV_TITLES={}, FAV_REG={}, LIB_DOCS=[];
+let FAVS=new Set(), FAV_TITLES={}, FAV_REG={}, LIB_DOCS=[], HOME_DOCS=[];
 let editType=null, editId=null, editFileId=null;
 const TASKS={}; let taskSeq=0;
 
@@ -377,7 +389,7 @@ function renderTasks(){
   const list=Object.values(TASKS);
   el.innerHTML=list.map(t=>{
     const cls=t.status==='done'?'done':t.status==='error'?'err':'';
-    const ic=t.status==='done'?'✅':t.status==='error'?'⚠️':'';
+    const ic=t.status==='done'?'✅':t.status==='error'?'⚠️':'⏳';
     let acts='';
     if(t.status==='active') acts='<button class="btn btn-s" onclick="cancelTask(\''+t.id+'\')">إلغاء</button>';
     else if(t.status==='done') acts='<button class="btn btn-p" onclick="openTask(\''+t.id+'\')">فتح الملخص</button><button class="btn btn-g" onclick="dismissTask(\''+t.id+'\')">✕</button>';
@@ -419,6 +431,14 @@ function actions(type,id,fileId,cid){
   const ff = fileId ? ",\'"+fileId+"\'" : "";
   return '<button class="btn btn-g" onclick="editItem(\''+type+'\',\''+id+'\')">✏️</button><button class="btn btn-g" onclick="delItem(\''+type+'\',\''+id+'\''+ff+')">🗑️</button>';
 }
+
+function askConfirm(msg){ return new Promise(res=>{ $('#cfMsg').textContent=msg; $('#cfModal').classList.remove('hidden'); window._cfRes=res; }); }
+window.cfYes=()=>{ $('#cfModal').classList.add('hidden'); const r=window._cfRes; window._cfRes=null; if(r)r(true); };
+window.cfNo=()=>{ $('#cfModal').classList.add('hidden'); const r=window._cfRes; window._cfRes=null; if(r)r(false); };
+function askPrompt(msg,ph,isPass){ return new Promise(res=>{ $('#prMsg').textContent=msg; const i=$('#prInput'); i.type=isPass?'password':'text'; i.placeholder=ph||''; i.value=''; $('#prModal').classList.remove('hidden'); setTimeout(()=>i.focus(),60); window._prRes=res; }); }
+window.prOk=()=>{ $('#prModal').classList.add('hidden'); const r=window._prRes; window._prRes=null; if(r)r($('#prInput').value); };
+window.prCancel=()=>{ $('#prModal').classList.add('hidden'); const r=window._prRes; window._prRes=null; if(r)r(null); };
+
 async function loadFavs(){
   if(!currentUser) return;
   try{
@@ -479,6 +499,26 @@ function libRow(d){
   const x=d.data(); const canDl=x.fileId&&!x.fileDeleted;
   return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+' • <bdi>'+(x.summary?.wordCount||0)+'</bdi> كلمة'+(x.fileDeleted?' • <span style="color:var(--warn)">الأصلي اتحذف</span>':'')+'</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button>'+favStar('summary',d.id,x.fileName)+(canDl?'<button class="btn btn-g" onclick="dlOrig(\''+d.id+'\')">📎</button>':'')+'<button class="btn btn-g" onclick="delRec(\''+d.id+'\')">🗑️</button></div></div>';
 }
+window.filterHome=()=>{
+  const q=($('#homeSearch')?$('#homeSearch').value:'').trim().toLowerCase();
+  const box=$('#homeResults'); if(!box) return;
+  if(!q){ box.classList.add('hidden'); box.innerHTML=''; const rc=$('#recentCard'); if(rc)rc.classList.remove('hidden'); return; }
+  const rc=$('#recentCard'); if(rc)rc.classList.add('hidden');
+  const sums=HOME_DOCS.filter(d=>((d.data().fileName)||'').toLowerCase().includes(q));
+  const cols=MY.filter(x=>((x.name||'')+' '+(x.code||'')).toLowerCase().includes(q));
+  let html='';
+  if(sums.length) html+='<div class="head" style="margin:8px 0"><h1 style="font-size:16px">📄 ملخصات ('+sums.length+')</h1></div>'+sums.slice(0,8).map(d=>rowHtml(d)).join('');
+  if(cols.length) html+='<div class="head" style="margin:8px 0"><h1 style="font-size:16px">🎓 كليات ('+cols.length+')</h1></div>'+cols.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="myCollege(\''+x.id+'\')">ادخل ←</button></div>').join('');
+  box.innerHTML=html||'<div class="empty">مفيش نتائج لـ "'+esc(q)+'"</div>';
+  box.classList.remove('hidden');
+};
+window.filterMy=()=>{
+  const el=$('#myList'); if(!el) return;
+  if(!MY.length){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
+  const q=($('#mySearch')?$('#mySearch').value:'').trim().toLowerCase();
+  const list=q?MY.filter(x=>((x.name||'')+' '+(x.code||'')).toLowerCase().includes(q)):MY;
+  el.innerHTML=list.length?list.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="myCollege(\''+x.id+'\')">ادخل الكلية ←</button></div>').join(''):'<div class="empty">مفيش نتائج لـ "'+esc(q)+'"</div>';
+};
 function fillAccount(){
   if(!currentUser) return;
   $('#acName').value = currentUser.displayName || '';
@@ -506,9 +546,9 @@ window.changePass=async()=>{
   }catch(e){ toast(e.code==='auth/wrong-password'||e.code==='auth/invalid-credential'?'الباسورد الحالي غلط':'مرفوض: '+(e.code||e.message),'err'); }
 };
 window.deleteAccount=async()=>{
-  if(!confirm('متأكد؟ الحذف نهائي ومش هيرجع.')) return;
-  if(!confirm('آخر تأكيد: كل ملخصاتك وملفاتك وانضماماتك هتتمسح. تكمّل؟')) return;
-  const cur=prompt('اكتب باسوردك عشان نأكد الحذف');
+  if(!await askConfirm('متأكد؟ الحذف نهائي ومش هيرجع.')) return;
+  if(!await askConfirm('آخر تأكيد: كل ملخصاتك وملفاتك وانضماماتك هتتمسح. تكمّل؟')) return;
+  const cur=await askPrompt('اكتب باسوردك عشان نأكد الحذف','',true);
   if(!cur) return toast('اتلغى','warn');
   try{ const cred=EmailAuthProvider.credential(currentUser.email,cur); await reauthenticateWithCredential(currentUser,cred); }
   catch(e){ return toast('الباسورد غلط، اتلغى الحذف','err'); }
@@ -543,7 +583,7 @@ window.saveEdit=async()=>{
   }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 };
 window.delItem=async(type,id,fileId)=>{
-  if(!confirm('متأكد إنك عايز تحذف ده؟')) return;
+  if(!await askConfirm('متأكد إنك عايز تحذف ده؟')) return;
   const col=type==='college'?'colleges':type==='dept'?'departments':type==='sem'?'semesters':type==='course'?'courses':'lectures';
   try{
     if(fileId){ try{ await worker('/file/'+fileId,{method:'DELETE'}); }catch{} }
@@ -696,11 +736,11 @@ async function loadMy(){
   const el=$('#myList'); if(!el) return;
   try {
     const r=await getDoc(doc(db,'org_roles',currentUser.uid));
-    if(!r.exists()||!(r.data().memberOf||[]).length){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
+    if(!r.exists()||!(r.data().memberOf||[]).length){ MY=[]; filterMy(); return; }
     const ids=r.data().memberOf;
     const snap=await getDocs(query(collection(db,'colleges'),where('__name__','in',ids)));
     MY=snap.docs.map(x=>({id:x.id,...x.data()}));
-    el.innerHTML=MY.length?MY.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="myCollege(\''+x.id+'\')">ادخل الكلية ←</button></div>').join(''):'<div class="empty">مفيش كليات.</div>';
+    filterMy();
   } catch(e){ el.innerHTML='<div class="empty">خطأ: '+esc(e.message)+'</div>'; }
 }
 window.myCollege=(cid)=>{ const c=MY.find(x=>x.id===cid); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=true; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
@@ -712,6 +752,7 @@ window.joinByCode=joinByCode; window.loadMy=loadMy; window.actions=actions; wind
 window.openDoc=openDoc; window.closeDoc=closeDoc; window.appointDoctor=appointDoctor; window.openStudents=openStudents;
 window.fillAccount=fillAccount; window.changeName=changeName; window.changePass=changePass; window.deleteAccount=deleteAccount;
 window.loadFavs=loadFavs; window.toggleFav=toggleFav; window.renderFav=renderFav; window.filterLib=filterLib; window.favStar=favStar;
+window.askConfirm=askConfirm; window.askPrompt=askPrompt; window.cfYes=cfYes; window.cfNo=cfNo; window.prOk=prOk; window.prCancel=prCancel; window.filterHome=filterHome; window.filterMy=filterMy;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
@@ -744,8 +785,8 @@ function applyView(v){
   const cf=$('#coForm'); if(cf) cf.style.display=rf;
   const lf=$('#lecUploadCard'); if(lf) lf.style.display=canManage?'block':'none';
   const sb=$('#stuBtn'); if(sb) sb.style.display=canManage?'inline-flex':'none';
-  if(v==='dash') loadStats();
-  if(v==='my') loadMy();
+  if(v==='dash'){ const hs=$('#homeSearch'); if(hs)hs.value=''; loadStats(); }
+  if(v==='my'){ const ms=$('#mySearch'); if(ms)ms.value=''; loadMy(); }
   if(v==='acct') fillAccount();
   if(v==='fav') renderFav();
   if(v==='admin') loadColleges();
@@ -849,6 +890,8 @@ async function loadStats(){
   $('#stats').innerHTML='<div class="feat"><div class="ic">📄</div><h3><bdi>'+n+'</bdi></h3><p>ملخصاتك</p></div><div class="feat"><div class="ic">📖</div><h3><bdi>'+words.toLocaleString('ar-EG')+'</bdi></h3><p>كلمات اتلخصت</p></div><div class="feat"><div class="ic">⏱️</div><h3><bdi>'+Math.round(words/180)+'</bdi></h3><p>دقائق مذاكرة وفّرتها</p></div>';
   const recent=docs.slice(0,4);
   $('#recent').innerHTML=recent.length?recent.map(rowHtml).join(''):'<div class="empty">لسه مفيش ملخصات. ارفع أول ملف ✨</div>';
+  HOME_DOCS=docs;
+  filterHome();
 }
 function rowHtml(d){ const x=d.data(); return '<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 10px"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+'</small></div><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button></div>'; }
 window.openRec=async id=>{ const d=await getDoc(doc(db,'summaries',id)); if(d.exists()){ const x=d.data(); META[id]={fileId:x.fileId,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; renderResult({id,...x}); go('res'); } };
@@ -865,7 +908,7 @@ async function loadLibrary(){
   LIB_DOCS=docs;
   filterLib();
 }
-window.delRec=async(id)=>{ if(!confirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} if(m.fileId){ try{ await worker('/file/'+m.fileId,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
+window.delRec=async(id)=>{ if(!await askConfirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} if(m.fileId){ try{ await worker('/file/'+m.fileId,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
 if(matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
 </script>
 </body>
