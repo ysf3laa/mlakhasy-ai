@@ -346,7 +346,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <button class="btn btn-p" style="width:100%" onclick="saveEdit()">💾 احفظ</button>
 </div></div>
 <div class="modal hidden" id="docModal"><div class="modal-card">
-<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">🧑‍ تعيين دكتور</h1><button class="btn btn-g" onclick="closeDoc()">✕</button></div>
+<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">🧑‍🏫 تعيين دكتور</h1><button class="btn btn-g" onclick="closeDoc()">✕</button></div>
 <div class="field"><label>بريد الدكتور الإلكتروني</label><input class="inp" id="docEmail" type="email" placeholder="example@mail.com"></div>
 <p style="color:var(--muted);font-size:13px;margin-bottom:12px">الدكتور هيبقى مسؤول عن كل المواد والطلاب في هذه الكلية. لازم يكون عمل حساب بالبريد ده الأول.</p>
 <button class="btn btn-p" style="width:100%" onclick="appointDoctor()">عيّن دكتور</button>
@@ -575,6 +575,42 @@ window.removePhoto=async()=>{
   myPhotoUrl=''; toast('الصورة اتمسحت','ok'); fillAccount(); loadHeaderAvatar();
 };
 
+function loadScript(src){ return new Promise((res,rej)=>{ if([...document.scripts].some(s=>s.src===src)) return res(); const s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=()=>rej(new Error('load '+src)); document.head.appendChild(s); }); }
+let _tess=null,_pdf=null;
+function ensureTess(){ if(_tess)return _tess; _tess=loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'); return _tess; }
+function ensurePdf(){ if(_pdf)return _pdf; _pdf=loadScript('https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js').then(()=>{ if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js'; }); return _pdf; }
+async function ocrImage(file){ await ensureTess(); const r=await Tesseract.recognize(file,'ara+eng',{logger:()=>{}}); return (r.data&&r.data.text)||''; }
+async function ocrPdf(file){
+  await ensurePdf();
+  const buf=await file.arrayBuffer();
+  const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+  let all=''; const max=Math.min(pdf.numPages,12);
+  for(let i=1;i<=max;i++){
+    const pg=await pdf.getPage(i);
+    const tc=await pg.getTextContent();
+    let pt=tc.items.map(it=>it.str).join(' ');
+    if(pt.replace(/\s/g,'').length<40){
+      const vp=pg.getViewport({scale:2});
+      const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height;
+      await pg.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+      const blob=await new Promise(r=>c.toBlob(r,'image/png'));
+      pt=await ocrImage(blob);
+    }
+    all+=pt+'\n';
+    if(all.length>60000) break;
+  }
+  return all;
+}
+async function extractTextLocal(file){
+  const isImg=file.type.startsWith('image/');
+  const isPdf=file.type==='application/pdf'||/\.pdf$/i.test(file.name);
+  const isTxt=file.type==='text/plain'||/\.(txt|md)$/i.test(file.name);
+  if(isTxt) return await file.text();
+  if(!isImg&&!isPdf) return '';
+  if(isImg) return await ocrImage(file);
+  return await ocrPdf(file);
+}
+
 let _katexPromise=null;
 function ensureKatex(){
   if(_katexPromise) return _katexPromise;
@@ -595,6 +631,54 @@ function renderMath(root){
     try{ katex.render(tex,el,{throwOnError:false,displayMode:disp,output:'html',macros:MA}); }
     catch(e){ el.textContent=tex; }
   });
+}
+
+function escTex(s){
+  s=String(s??'');
+  const raw=c=>c.replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
+  const re=/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\$([^$\n]+?)\$|\\\(([\s\S]+?)\\\)/g;
+  let out='',last=0,m;
+  while((m=re.exec(s))){
+    out+=raw(s.slice(last,m.index));
+    const tex=m[1]||m[2]||m[3]||m[4];
+    const disp=!!(m[1]||m[2]);
+    out+=(disp?'$$':'$')+raw(tex)+(disp?'$$':'$');
+    last=re.lastIndex;
+  }
+  out+=raw(s.slice(last));
+  return out;
+}
+function mdTex(s){
+  s=String(s??'');
+  const re=/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\$([^$\n]+?)\$|\\\(([\s\S]+?)\\\)/g;
+  return s.replace(re,(mm,a,b,c,d)=>{ const tex=a||b||c||d; const disp=!!(a||b); return disp?'\n\n$$'+tex+'$$\n\n':'$'+tex+'$'; });
+}
+function buildExportHTML(rec){
+  const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter','openrouter-vision':'OpenRouter Vision','cloudflare-ai':'Cloudflare AI'}[rec.provider]||rec.provider||'';
+  const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
+  const E=escTex;
+  let body='';
+  body+='<h1>'+E(rec.fileName)+'</h1>';
+  body+='<p class="meta"><span>'+E(prov)+'</span> <span><bdi>'+(s.wordCount||0)+'</bdi> كلمة</span> <span><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p>';
+  if(tldr.length) body+='<div class="tldr"><h2>⚡ اقرأ في 15 ثانية</h2><ul>'+tldr.map(t=>'<li>'+E(t)+'</li>').join('')+'</ul></div>';
+  if(s.overview) body+='<div class="ov"><h2>📌 نظرة عامة</h2><p>'+E(s.overview)+'</p></div>';
+  (s.sections||[]).forEach(sec=>{ body+='<section><h2>'+E(sec.heading)+'</h2><ul>'+(sec.points||[]).map(p=>'<li>'+E(p)+'</li>').join('')+'</ul></section>'; });
+  if((s.terms||[]).length) body+='<section><h2>🔑 المصطلحات</h2><dl>'+s.terms.map(t=>'<dt>'+E(t.term)+'</dt><dd>'+E(t.definition)+'</dd>').join('')+'</dl></section>';
+  if((s.questions||[]).length) body+='<section><h2>❓ أسئلة مراجعة</h2><ol>'+s.questions.map(q=>'<li>'+E(q)+'</li>').join('')+'</ol></section>';
+  if((s.flashcards||[]).length) body+='<section><h2>🗂️ بطاقات حفظ</h2><div class="fc">'+s.flashcards.map(c=>'<details><summary>'+E(c.front)+'</summary><div class="bk">'+E(c.back)+'</div></details>').join('')+'</div><p class="hint">اضغط على البطاقة عشان تشوف الإجابة</p></section>';
+  const css=':root{--bg:#f6f8fb;--surface:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--primary:#4f46e5;--soft:#eef2ff}*{box-sizing:border-box}body{margin:0;font-family:Tajawal,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.8}.wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}h1{font-size:26px;margin:0 0 6px}.meta{color:var(--muted);font-size:13px;display:flex;gap:14px;flex-wrap:wrap;margin:0 0 22px}.meta span{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:3px 12px}.tldr{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(14,165,233,.1));border:1px solid rgba(16,185,129,.25);border-radius:18px;padding:18px;margin-bottom:20px}.tldr h2,.ov h2,section h2{font-size:19px;color:var(--primary);margin:0 0 10px}.ov{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:18px}section{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:16px}ul,ol{margin:0;padding-inline-start:22px}li{margin:6px 0}dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px}dt{font-weight:800;color:var(--primary)}dd{margin:0;color:var(--muted)}.fc{display:grid;gap:10px}details{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:var(--soft)}summary{cursor:pointer;font-weight:800;color:var(--primary);list-style:none}summary::-webkit-details-marker{display:none}.bk{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}.hint{text-align:center;color:var(--muted);font-size:12px}.math{display:inline-block;direction:ltr;unicode-bidi:isolate;vertical-align:middle}.katex{font-size:1.06em}.katex-display{margin:.5em 0;overflow-x:auto;overflow-y:hidden}@media print{body{background:#fff}section,.tldr,.ov{break-inside:avoid;border:none}}';
+  return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(rec.fileName)+'</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"><style>'+css+'</style></head><body><div class="wrap">'+body+'</div><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"><\/script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"><\/script><script>renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\\\[",right:"\\\\]",display:true},{left:"\\\\(",right:"\\\\)",display:false}],macros:{"\\\\implies":"\\\\Rightarrow","\\\\iff":"\\\\Leftrightarrow","\\\\ne":"\\\\neq"},throwOnError:false});<\/script></body></html>';
+}
+function mdText(rec){
+  const s=rec.summary||{}; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
+  const M=mdTex; let o='# '+(rec.fileName||'ملخص')+'\n\n';
+  if(tldr.length){ o+='> **⚡ اقرأ في 15 ثانية**\n'; tldr.forEach(t=>o+='> '+M(t)+'\n'); o+='\n'; }
+  if(s.overview){ o+='## 📌 نظرة عامة\n\n'+M(s.overview)+'\n\n'; }
+  (s.sections||[]).forEach(sec=>{ o+='## '+M(sec.heading)+'\n\n'; (sec.points||[]).forEach(p=>o+='- '+M(p)+'\n'); o+='\n'; });
+  if((s.terms||[]).length){ o+='## 🔑 المصطلحات\n\n'; s.terms.forEach(t=>o+='- **'+M(t.term)+'**: '+M(t.definition)+'\n'); o+='\n'; }
+  if((s.questions||[]).length){ o+='## ❓ أسئلة مراجعة\n\n'; s.questions.forEach((q,i)=>o+=(i+1)+'. '+M(q)+'\n'); o+='\n'; }
+  if((s.flashcards||[]).length){ o+='## 🗂️ بطاقات حفظ\n\n'; s.flashcards.forEach(c=>o+='- **س:** '+M(c.front)+'\n  - **ج:** '+M(c.back)+'\n'); }
+  return o;
 }
 
 function fillAccount(){
@@ -705,7 +789,7 @@ async function loadColleges(){
   const snap=await getDocs(collection(db,'colleges'));
   let all=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
   COLLEGES = userRole==='admin' ? all : all.filter(x=>myDoctorOf.includes(x.id));
-  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(userRole==='admin'?'<button class="btn btn-g" onclick="openDoc(\''+x.id+'\',\''+esc(x.name)+'\')">🧑‍🏫 دكتور</button>':'')+(canM(x.id)?(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>'):'')+'<button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id,null,x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات. أنشئ واحدة فوق ☝️</div>';
+  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(userRole==='admin'?'<button class="btn btn-g" onclick="openDoc(\''+x.id+'\',\''+esc(x.name)+'\')">🧑‍ دكتور</button>':'')+(canM(x.id)?(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>'):'')+'<button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id,null,x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات. أنشئ واحدة فوق ☝️</div>';
 }
 window.openDept=(id)=>{ const c=COLLEGES.find(x=>x.id===id); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=false; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 async function createDept(){
@@ -768,7 +852,11 @@ async function createLecture(){
   const f=lecFile, cid=currentCourse.id; lecFile=null; $('#lpicked').innerHTML=''; $('#lgo').disabled=true; lfile.value=''; $('#lName').value='';
   const t=newTask(name); t.courseId=cid;
   try {
-    const up=await worker('/file',{method:'PUT',signal:t.controller.signal,headers:{'X-File-Name':encodeURIComponent(f.name),'Content-Type':f.type||'application/octet-stream'},body:f});
+    updTask(t,8,'بيقرأ النص محليًا (ممكن ياخد ثواني)…');
+    let sendFile=f, sendType=f.type||'application/octet-stream', sendName=f.name;
+    try{ const txt=await extractTextLocal(f); if(txt&&txt.replace(/\s/g,'').length>=80){ sendFile=new Blob([txt],{type:'text/plain;charset=utf-8'}); sendType='text/plain;charset=utf-8'; sendName=f.name.replace(/\.[^.]+$/,'')+'.txt'; } }catch(e){}
+    if(t.controller.signal.aborted) return;
+    const up=await worker('/file',{method:'PUT',signal:t.controller.signal,headers:{'X-File-Name':encodeURIComponent(sendName),'Content-Type':sendType},body:sendFile});
     const upJ=await up.json(); if(!up.ok) throw new Error(upJ.message||'فشل رفع الملف');
     t.fileId=upJ.fileId; updTask(t,45,'الذكاء بيفهم ويولّد الملخص…');
     const su=await worker('/summarize',{method:'POST',signal:t.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:upJ.fileId,lang:'ar',type:'detailed'})});
@@ -826,53 +914,6 @@ async function loadMy(){
 }
 window.myCollege=(cid)=>{ const c=MY.find(x=>x.id===cid); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=true; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 
-function escTex(s){
-  s=String(s??'');
-  const raw=c=>c.replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
-  const re=/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\$([^$\n]+?)\$|\\\(([\s\S]+?)\\\)/g;
-  let out='',last=0,m;
-  while((m=re.exec(s))){
-    out+=raw(s.slice(last,m.index));
-    const tex=m[1]||m[2]||m[3]||m[4];
-    const disp=!!(m[1]||m[2]);
-    out+=(disp?'$$':'$')+raw(tex)+(disp?'$$':'$');
-    last=re.lastIndex;
-  }
-  out+=raw(s.slice(last));
-  return out;
-}
-function mdTex(s){
-  s=String(s??'');
-  const re=/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\$([^$\n]+?)\$|\\\(([\s\S]+?)\\\)/g;
-  return s.replace(re,(mm,a,b,c,d)=>{ const tex=a||b||c||d; const disp=!!(a||b); return disp?'\n\n$$'+tex+'$$\n\n':'$'+tex+'$'; });
-}
-function buildExportHTML(rec){
-  const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter'}[rec.provider]||rec.provider||'';
-  const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
-  const E=escTex;
-  let body='';
-  body+='<h1>'+E(rec.fileName)+'</h1>';
-  body+='<p class="meta"><span>'+E(prov)+'</span> <span><bdi>'+(s.wordCount||0)+'</bdi> كلمة</span> <span><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p>';
-  if(tldr.length) body+='<div class="tldr"><h2>⚡ اقرأ في 15 ثانية</h2><ul>'+tldr.map(t=>'<li>'+E(t)+'</li>').join('')+'</ul></div>';
-  if(s.overview) body+='<div class="ov"><h2>📌 نظرة عامة</h2><p>'+E(s.overview)+'</p></div>';
-  (s.sections||[]).forEach(sec=>{ body+='<section><h2>'+E(sec.heading)+'</h2><ul>'+(sec.points||[]).map(p=>'<li>'+E(p)+'</li>').join('')+'</ul></section>'; });
-  if((s.terms||[]).length) body+='<section><h2>🔑 المصطلحات</h2><dl>'+s.terms.map(t=>'<dt>'+E(t.term)+'</dt><dd>'+E(t.definition)+'</dd>').join('')+'</dl></section>';
-  if((s.questions||[]).length) body+='<section><h2>❓ أسئلة مراجعة</h2><ol>'+s.questions.map(q=>'<li>'+E(q)+'</li>').join('')+'</ol></section>';
-  if((s.flashcards||[]).length) body+='<section><h2>🗂️ بطاقات حفظ</h2><div class="fc">'+s.flashcards.map(c=>'<details><summary>'+E(c.front)+'</summary><div class="bk">'+E(c.back)+'</div></details>').join('')+'</div><p class="hint">اضغط على البطاقة عشان تشوف الإجابة</p></section>';
-  const css=':root{--bg:#f6f8fb;--surface:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--primary:#4f46e5;--soft:#eef2ff}*{box-sizing:border-box}body{margin:0;font-family:Tajawal,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.8}.wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}h1{font-size:26px;margin:0 0 6px}.meta{color:var(--muted);font-size:13px;display:flex;gap:14px;flex-wrap:wrap;margin:0 0 22px}.meta span{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:3px 12px}.tldr{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(14,165,233,.1));border:1px solid rgba(16,185,129,.25);border-radius:18px;padding:18px;margin-bottom:20px}.tldr h2,.ov h2,section h2{font-size:19px;color:var(--primary);margin:0 0 10px}.ov{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:18px}section{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:16px}ul,ol{margin:0;padding-inline-start:22px}li{margin:6px 0}dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px}dt{font-weight:800;color:var(--primary)}dd{margin:0;color:var(--muted)}.fc{display:grid;gap:10px}details{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:var(--soft)}summary{cursor:pointer;font-weight:800;color:var(--primary);list-style:none}summary::-webkit-details-marker{display:none}.bk{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}.hint{text-align:center;color:var(--muted);font-size:12px}.math{display:inline-block;direction:ltr;unicode-bidi:isolate;vertical-align:middle}.katex{font-size:1.06em}.katex-display{margin:.5em 0;overflow-x:auto;overflow-y:hidden}@media print{body{background:#fff}section,.tldr,.ov{break-inside:avoid;border:none}}';
-  return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(rec.fileName)+'</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"><style>'+css+'</style></head><body><div class="wrap">'+body+'</div><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"><\/script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"><\/script><script>renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\\\[",right:"\\\\]",display:true},{left:"\\\\(",right:"\\\\)",display:false}],macros:{"\\\\implies":"\\\\Rightarrow","\\\\iff":"\\\\Leftrightarrow","\\\\ne":"\\\\neq"},throwOnError:false});<\/script></body></html>';
-}
-function mdText(rec){
-  const s=rec.summary||{}; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
-  const M=mdTex; let o='# '+(rec.fileName||'ملخص')+'\n\n';
-  if(tldr.length){ o+='> **⚡ اقرأ في 15 ثانية**\n'; tldr.forEach(t=>o+='> '+M(t)+'\n'); o+='\n'; }
-  if(s.overview){ o+='## 📌 نظرة عامة\n\n'+M(s.overview)+'\n\n'; }
-  (s.sections||[]).forEach(sec=>{ o+='## '+M(sec.heading)+'\n\n'; (sec.points||[]).forEach(p=>o+='- '+M(p)+'\n'); o+='\n'; });
-  if((s.terms||[]).length){ o+='## 🔑 المصطلحات\n\n'; s.terms.forEach(t=>o+='- **'+M(t.term)+'**: '+M(t.definition)+'\n'); o+='\n'; }
-  if((s.questions||[]).length){ o+='## ❓ أسئلة مراجعة\n\n'; s.questions.forEach((q,i)=>o+=(i+1)+'. '+M(q)+'\n'); o+='\n'; }
-  if((s.flashcards||[]).length){ o+='## 🗂️ بطاقات حفظ\n\n'; s.flashcards.forEach(c=>o+='- **س:** '+M(c.front)+'\n  - **ج:** '+M(c.back)+'\n'); }
-  return o;
-}
 window.loadRole=loadRole; window.ensureUserDoc=ensureUserDoc; window.createCollege=createCollege; window.genCollegeCode=genCollegeCode; window.loadColleges=loadColleges;
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
@@ -882,7 +923,7 @@ window.fillAccount=fillAccount; window.changeName=changeName; window.changePass=
 window.loadFavs=loadFavs; window.toggleFav=toggleFav; window.renderFav=renderFav; window.filterLib=filterLib; window.favStar=favStar;
 window.askConfirm=askConfirm; window.askPrompt=askPrompt; window.cfYes=cfYes; window.cfNo=cfNo; window.prOk=prOk; window.prCancel=prCancel; window.filterHome=filterHome; window.filterMy=filterMy;
 window.changePhoto=changePhoto; window.removePhoto=removePhoto; window.resizeImage=resizeImage; window.loadHeaderAvatar=loadHeaderAvatar;
-window.ensureKatex=ensureKatex; window.renderMath=renderMath;
+window.ensureKatex=ensureKatex; window.renderMath=renderMath; window.extractTextLocal=extractTextLocal;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
@@ -976,22 +1017,26 @@ window.summarize=async()=>{
   const f=pickedFile, lang=$('#sLang').value, typ=$('#sType').value; pickedFile=null; $('#picked').innerHTML=''; $('#go').disabled=true; fileInput.value='';
   const t=newTask(f.name);
   try {
-    const up=await worker('/file',{method:'PUT',signal:t.controller.signal,headers:{'X-File-Name':encodeURIComponent(f.name),'Content-Type':f.type||'application/octet-stream'},body:f});
+    updTask(t,8,'بيقرأ النص محليًا (ممكن ياخد ثواني)…');
+    let sendFile=f, sendType=f.type||'application/octet-stream', sendName=f.name;
+    try{ const txt=await extractTextLocal(f); if(txt&&txt.replace(/\s/g,'').length>=80){ sendFile=new Blob([txt],{type:'text/plain;charset=utf-8'}); sendType='text/plain;charset=utf-8'; sendName=f.name.replace(/\.[^.]+$/,'')+'.txt'; } }catch(e){}
+    if(t.controller.signal.aborted) return;
+    const up=await worker('/file',{method:'PUT',signal:t.controller.signal,headers:{'X-File-Name':encodeURIComponent(sendName),'Content-Type':sendType},body:sendFile});
     const upJ=await up.json(); if(!up.ok) throw new Error(upJ.message||'فشل رفع الملف');
     t.fileId=upJ.fileId; updTask(t,45,'الذكاء بيفهم ويولّد الملخص…');
     const su=await worker('/summarize',{method:'POST',signal:t.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:upJ.fileId,lang,type:typ})});
     const suJ=await su.json(); if(!su.ok||suJ.error) throw new Error(suJ.message||'فشل التلخيص');
     updTask(t,85,'بنسّج النتيجة…');
-    const docRef=await addDoc(collection(db,'summaries'),{uid:currentUser.uid,fileName:f.name,fileType:f.type,fileSize:f.size,fileId:upJ.fileId,provider:suJ.provider,summary:suJ.summary,fileDeleted:false,createdAt:serverTimestamp()});
+    const docRef=await addDoc(collection(db,'summaries'),{uid:currentUser.uid,fileName:f.name,fileType:sendType,fileSize:sendFile.size,fileId:upJ.fileId,provider:suJ.provider,summary:suJ.summary,fileDeleted:false,createdAt:serverTimestamp()});
     t.progress=100; t.status='done'; t.msg='الملخص جاهز 🎉';
     META[docRef.id]={fileId:upJ.fileId,fileName:f.name,fileDeleted:false};
-    t.rec={id:docRef.id,fileName:f.name,summary:suJ.summary,provider:suJ.provider,fileSize:f.size,fileId:upJ.fileId,fileDeleted:false};
+    t.rec={id:docRef.id,fileName:f.name,summary:suJ.summary,provider:suJ.provider,fileSize:sendFile.size,fileId:upJ.fileId,fileDeleted:false};
     renderTasks(); toast('الملخص جاهز 🎉','ok'); loadLibrary(); loadStats();
   } catch(err){ failTask(t,err); }
 };
 window.toggleAcc=el=>el.parentElement.classList.toggle('open');
 function renderResult(rec){
-  const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter'}[rec.provider]||rec.provider;
+  const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter','openrouter-vision':'OpenRouter Vision','cloudflare-ai':'Cloudflare AI'}[rec.provider]||rec.provider;
   const canDl=rec.fileId&&!rec.fileDeleted; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
   let html='<div class="head"><div><button class="btn btn-g" onclick="goBack()" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
   if(canDl) html+='<button class="btn btn-s" onclick="dlOrig(\''+rec.id+'\')">📎 الملف الأصلي</button>';
