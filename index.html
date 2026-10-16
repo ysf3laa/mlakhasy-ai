@@ -15,6 +15,9 @@ a{color:inherit;text-decoration:none}
 button,input,select,textarea{font-family:inherit}
 bdi{unicode-bidi:isolate}
 .hidden{display:none!important}
+.boot{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:var(--bg)}
+.spin{width:38px;height:38px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--primary);animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 .wrap{max-width:1100px;margin:0 auto;padding:0 20px}
 nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px solid var(--border)}
 .nav-in{display:flex;align-items:center;gap:12px;height:64px}
@@ -150,7 +153,8 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <button class="btn btn-s" onclick="logout()">خروج</button>
 </div>
 </div></nav>
-<div id="gate"><div class="gate-card">
+<div id="boot"><div class="spin"></div></div>
+<div id="gate" class="hidden"><div class="gate-card">
 <button class="btn btn-g" style="position:absolute;top:12px;inset-inline-end:12px" onclick="toggleTheme()">🌓</button>
 <div class="logo" style="justify-content:center"><div class="logo-badge">✦</div> ملخّصي</div>
 <p>سجّل دخولك أو اعمل حساب جديد عشان تبدأ تلخيص محاضراتك</p>
@@ -650,11 +654,15 @@ $('#authForm').addEventListener('submit',async e=>{
 });
 function trErr(c){ return {'auth/email-already-in-use':'البريد مسجّل بالفعل','auth/invalid-email':'بريد غير صحيح','auth/weak-password':'كلمة المرور ضعيفة (6 حروف+)','auth/user-not-found':'مفيش حساب بالبريد ده','auth/wrong-password':'كلمة المرور غلط','auth/invalid-credential':'بيانات الدخول غلط','auth/too-many-requests':'محاولات كتير، استنى شوية','auth/operation-not-allowed':'فعّل Email/Password من Firebase Auth','auth/network-request-failed':'مفيش إنترنت، اتأكد من الشبكة','auth/requires-recent-login':'اتأكد من باسوردك حديثًا وحاول تاني'}[c]||'حصل خطأ: '+c; }
 window.logout=async()=>{ await signOut(auth); };
+let booted=false;
+function hideBoot(){ if(booted)return; booted=true; const b=$('#boot'); if(b) b.classList.add('hidden'); }
 onAuthStateChanged(auth,u=>{
+  hideBoot();
   currentUser=u;
   if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#mainNav').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; go('dash'); loadLibrary(); loadRole(); loadMy(); }
   else { $('#gate').classList.remove('hidden'); $('#mainNav').classList.add('hidden'); $('#app').classList.add('hidden'); }
 });
+setTimeout(hideBoot,5000);
 function applyView(v){
   ['dash','upload','proc','res','lib','my','join','acct','admin','dept','sem','course','lecture','students'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
   $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
