@@ -106,9 +106,13 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 .flip-f{background:var(--soft);color:var(--primary);font-weight:800;font-size:16px}
 .flip-b{background:var(--surface);transform:rotateY(180deg)}
 .math{display:inline-block;direction:ltr;unicode-bidi:isolate;vertical-align:middle}
-.math-d{display:block;text-align:center;margin:10px 0;overflow-x:auto;overflow-y:hidden}
-.katex{font-size:1.08em}
-.katex-error{color:var(--err)!important;font-family:monospace;font-size:.92em}
+.math-d{display:block;text-align:center;margin:10px auto;padding:2px 0;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;max-width:100%}
+.math-d::-webkit-scrollbar{height:6px}
+.math-d::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.katex{font-size:1.06em}
+.math-d .katex{font-size:1.02em}
+.math-d .katex-display{margin:.3em 0}
+.katex-error{color:var(--err)!important;font-family:monospace;font-size:.9em;background:rgba(244,63,94,.08);padding:1px 5px;border-radius:6px}
 .hint{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
@@ -583,11 +587,12 @@ function ensureKatex(){
 }
 function renderMath(root){
   if(!window.katex||!root) return;
+  const MA={'\\implies':'\\Rightarrow','\\iff':'\\Leftrightarrow','\\ne':'\\neq','\\land':'\\wedge','\\lor':'\\vee'};
   root.querySelectorAll('.math').forEach(el=>{
     if(el.dataset.done) return; el.dataset.done='1';
     let tex=el.dataset.tex||''; tex=tex.replace(/\\\\/g,'\\');
     const disp=el.dataset.disp==='1';
-    try{ katex.render(tex,el,{throwOnError:false,displayMode:disp,output:'html'}); }
+    try{ katex.render(tex,el,{throwOnError:false,displayMode:disp,output:'html',macros:MA}); }
     catch(e){ el.textContent=tex; }
   });
 }
@@ -821,6 +826,53 @@ async function loadMy(){
 }
 window.myCollege=(cid)=>{ const c=MY.find(x=>x.id===cid); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=true; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 
+function escTex(s){
+  s=String(s??'');
+  const raw=c=>c.replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
+  const re=/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\$([^$\n]+?)\$|\\\(([\s\S]+?)\\\)/g;
+  let out='',last=0,m;
+  while((m=re.exec(s))){
+    out+=raw(s.slice(last,m.index));
+    const tex=m[1]||m[2]||m[3]||m[4];
+    const disp=!!(m[1]||m[2]);
+    out+=(disp?'$$':'$')+raw(tex)+(disp?'$$':'$');
+    last=re.lastIndex;
+  }
+  out+=raw(s.slice(last));
+  return out;
+}
+function mdTex(s){
+  s=String(s??'');
+  const re=/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\$([^$\n]+?)\$|\\\(([\s\S]+?)\\\)/g;
+  return s.replace(re,(mm,a,b,c,d)=>{ const tex=a||b||c||d; const disp=!!(a||b); return disp?'\n\n$$'+tex+'$$\n\n':'$'+tex+'$'; });
+}
+function buildExportHTML(rec){
+  const s=rec.summary||{}; const prov={gemini:'Gemini',deepseek:'DeepSeek',openrouter:'OpenRouter'}[rec.provider]||rec.provider||'';
+  const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
+  const E=escTex;
+  let body='';
+  body+='<h1>'+E(rec.fileName)+'</h1>';
+  body+='<p class="meta"><span>'+E(prov)+'</span> <span><bdi>'+(s.wordCount||0)+'</bdi> كلمة</span> <span><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p>';
+  if(tldr.length) body+='<div class="tldr"><h2>⚡ اقرأ في 15 ثانية</h2><ul>'+tldr.map(t=>'<li>'+E(t)+'</li>').join('')+'</ul></div>';
+  if(s.overview) body+='<div class="ov"><h2>📌 نظرة عامة</h2><p>'+E(s.overview)+'</p></div>';
+  (s.sections||[]).forEach(sec=>{ body+='<section><h2>'+E(sec.heading)+'</h2><ul>'+(sec.points||[]).map(p=>'<li>'+E(p)+'</li>').join('')+'</ul></section>'; });
+  if((s.terms||[]).length) body+='<section><h2>🔑 المصطلحات</h2><dl>'+s.terms.map(t=>'<dt>'+E(t.term)+'</dt><dd>'+E(t.definition)+'</dd>').join('')+'</dl></section>';
+  if((s.questions||[]).length) body+='<section><h2>❓ أسئلة مراجعة</h2><ol>'+s.questions.map(q=>'<li>'+E(q)+'</li>').join('')+'</ol></section>';
+  if((s.flashcards||[]).length) body+='<section><h2>🗂️ بطاقات حفظ</h2><div class="fc">'+s.flashcards.map(c=>'<details><summary>'+E(c.front)+'</summary><div class="bk">'+E(c.back)+'</div></details>').join('')+'</div><p class="hint">اضغط على البطاقة عشان تشوف الإجابة</p></section>';
+  const css=':root{--bg:#f6f8fb;--surface:#fff;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;--primary:#4f46e5;--soft:#eef2ff}*{box-sizing:border-box}body{margin:0;font-family:Tajawal,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.8}.wrap{max-width:760px;margin:0 auto;padding:28px 18px 60px}h1{font-size:26px;margin:0 0 6px}.meta{color:var(--muted);font-size:13px;display:flex;gap:14px;flex-wrap:wrap;margin:0 0 22px}.meta span{background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:3px 12px}.tldr{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(14,165,233,.1));border:1px solid rgba(16,185,129,.25);border-radius:18px;padding:18px;margin-bottom:20px}.tldr h2,.ov h2,section h2{font-size:19px;color:var(--primary);margin:0 0 10px}.ov{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:18px}section{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;margin-bottom:16px}ul,ol{margin:0;padding-inline-start:22px}li{margin:6px 0}dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px}dt{font-weight:800;color:var(--primary)}dd{margin:0;color:var(--muted)}.fc{display:grid;gap:10px}details{border:1px solid var(--border);border-radius:14px;padding:12px 14px;background:var(--soft)}summary{cursor:pointer;font-weight:800;color:var(--primary);list-style:none}summary::-webkit-details-marker{display:none}.bk{margin-top:8px;padding-top:8px;border-top:1px dashed var(--border)}.hint{text-align:center;color:var(--muted);font-size:12px}.math{display:inline-block;direction:ltr;unicode-bidi:isolate;vertical-align:middle}.katex{font-size:1.06em}.katex-display{margin:.5em 0;overflow-x:auto;overflow-y:hidden}@media print{body{background:#fff}section,.tldr,.ov{break-inside:avoid;border:none}}';
+  return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+E(rec.fileName)+'</title><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css"><style>'+css+'</style></head><body><div class="wrap">'+body+'</div><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"><\/script><script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"><\/script><script>renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:true},{left:"$",right:"$",display:false},{left:"\\\\[",right:"\\\\]",display:true},{left:"\\\\(",right:"\\\\)",display:false}],macros:{"\\\\implies":"\\\\Rightarrow","\\\\iff":"\\\\Leftrightarrow","\\\\ne":"\\\\neq"},throwOnError:false});<\/script></body></html>';
+}
+function mdText(rec){
+  const s=rec.summary||{}; const tldr=(s.tldr&&s.tldr.length)?s.tldr.filter(Boolean):[];
+  const M=mdTex; let o='# '+(rec.fileName||'ملخص')+'\n\n';
+  if(tldr.length){ o+='> **⚡ اقرأ في 15 ثانية**\n'; tldr.forEach(t=>o+='> '+M(t)+'\n'); o+='\n'; }
+  if(s.overview){ o+='## 📌 نظرة عامة\n\n'+M(s.overview)+'\n\n'; }
+  (s.sections||[]).forEach(sec=>{ o+='## '+M(sec.heading)+'\n\n'; (sec.points||[]).forEach(p=>o+='- '+M(p)+'\n'); o+='\n'; });
+  if((s.terms||[]).length){ o+='## 🔑 المصطلحات\n\n'; s.terms.forEach(t=>o+='- **'+M(t.term)+'**: '+M(t.definition)+'\n'); o+='\n'; }
+  if((s.questions||[]).length){ o+='## ❓ أسئلة مراجعة\n\n'; s.questions.forEach((q,i)=>o+=(i+1)+'. '+M(q)+'\n'); o+='\n'; }
+  if((s.flashcards||[]).length){ o+='## 🗂️ بطاقات حفظ\n\n'; s.flashcards.forEach(c=>o+='- **س:** '+M(c.front)+'\n  - **ج:** '+M(c.back)+'\n'); }
+  return o;
+}
 window.loadRole=loadRole; window.ensureUserDoc=ensureUserDoc; window.createCollege=createCollege; window.genCollegeCode=genCollegeCode; window.loadColleges=loadColleges;
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
@@ -957,8 +1009,8 @@ function renderResult(rec){
   window._lastRec=rec;
   ensureKatex().then(()=>renderMath($('#resBody'))).catch(()=>{});
 }
-window.copySum=async()=>{ const t=plain(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
-window.dlSum=()=>{ const t=plain(window._lastRec); const b=new Blob([t],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(window._lastRec.fileName.replace(/\.[^.]+$/,''))+'-ملخص.txt'; a.click(); toast('اتحمّل','ok'); };
+window.copySum=async()=>{ const t=mdText(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ Markdown','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
+window.dlSum=()=>{ const h=buildExportHTML(window._lastRec); const b=new Blob([h],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(window._lastRec.fileName.replace(/\.[^.]+$/,''))+'-ملخص.html'; a.click(); toast('اتحمّل ملف منظم (HTML)','ok'); };
 window.dlOrig=async(docId)=>{ const m=META[docId]; if(!m||!m.fileId) return toast('الملف الأصلي مش متاح','err'); try{ const r=await worker('/file/'+m.fileId,{method:'GET'}); if(!r.ok) throw new Error('الملف مش متاح'); const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الأصلي','ok'); }catch(e){ toast(e.message,'err'); } };
 function plain(r){ const s=r.summary||{}; let o='ملخص: '+r.fileName+'\n\n'; if(s.tldr&&s.tldr.length){o+='أهم 3 نقاط:\n'+s.tldr.map(t=>'- '+t).join('\n')+'\n\n';} o+=(s.overview||'')+'\n\n'; (s.sections||[]).forEach(x=>{ o+='## '+x.heading+'\n'+(x.points||[]).map(p=>'- '+p).join('\n')+'\n\n'; }); (s.terms||[]).forEach(t=>o+='- '+t.term+': '+t.definition+'\n'); o+='\nأسئلة:\n'+(s.questions||[]).map((q,i)=>(i+1)+'. '+q).join('\n'); return o; }
 async function loadStats(){
