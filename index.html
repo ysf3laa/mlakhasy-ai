@@ -223,6 +223,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <button class="nav-i" data-v="upload" onclick="go('upload')">⬆️<span>رفع</span></button>
 <button class="nav-i" data-v="lib" onclick="go('lib')">📚<span>مكتبتي</span></button>
 <button class="nav-i" data-v="my" onclick="go('my')">🎓<span>موادي</span></button>
+<button class="nav-i" data-v="djoin" onclick="go('djoin')">🧑‍<span>انضمام دكتور</span></button>
 <button class="nav-i hidden" data-v="admin" id="navAdmin" onclick="go('admin')">🏛️<span>إدارة</span></button>
 <div class="side-foot"><span class="pill" id="sideEmail"></span></div>
 </aside>
@@ -311,7 +312,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div id="semList"></div>
 </section>
 <section id="v-course" class="hidden">
-<div class="head"><div><h1 id="courseTitle">المواد</h1><p>مواد الفصل</p></div><button class="btn btn-s" onclick="go('sem')">→ رجوع للفصول</button></div>
+<div class="head"><div><h1 id="courseTitle">المواد</h1><p>مواد الفصل</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="go('sem')">→ رجوع</button><button class="btn btn-p" id="tcBtn" onclick="genTeacherCode()">🎓 كود دكتور</button></div></div>
 <div class="card" style="margin-bottom:14px" id="coForm">
 <div class="head"><h1 style="font-size:18px">➕ مادة جديدة</h1></div>
 <div class="field"><label>اسم المادة</label><input class="inp" id="coName" placeholder="مثال: المورفولوجيا"></div>
@@ -336,6 +337,14 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 </div>
 <div class="head"><h1 style="font-size:18px">🎬 المحاضرات</h1></div>
 <div id="lecList"></div>
+</section>
+<section id="v-djoin" class="hidden">
+<div class="head"><div><h1>انضمام دكتور</h1><p>اكتب كود الدعوة اللي الإدارة/العميد اداك ياه</p></div></div>
+<div class="card">
+<div class="field"><label>كود الدعوة</label><input class="inp" id="djoinCode" placeholder="مثال: TCH-A3F9K2-X7B2M1"></div>
+<button class="btn btn-p" style="width:100%" onclick="claimTeacher()">🧑‍🏫 فعّل حسابي كدكتور</button>
+<p style="color:var(--muted);font-size:13px;margin-top:12px">بعد التفعيل، المادة هتظهر في "موادي" وتقدر ترفع فيها محاضرات.</p>
+</div>
 </section>
 </main>
 </div></div>
@@ -377,6 +386,7 @@ let userRole=null, backTo='course', readOnly=false;
 let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
 let editType=null, editId=null, editFileId=null;
+let canLec=false;
 const TASKS={}; let taskSeq=0;
 function renderTasks(){
   const el=$('#tasks'); if(!el) return;
@@ -502,7 +512,17 @@ async function loadCourses(){
   COURSES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
   el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.code)+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button>'+actions('course',x.id)+'</div></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
 }
-window.openLecture=(id,from)=>{ const c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id); if(!c)return; currentCourse={id:c.id,name:c.name,code:c.code}; backTo=from||'course'; $('#lecTitle').textContent='محاضرات '+c.name; loadLectures(); go('lecture'); };
+window.openLecture=async(id,from)=>{
+  const c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id);
+  if(!c)return;
+  currentCourse={id:c.id,name:c.name,code:c.code};
+  backTo=from||'course';
+  let isT=(userRole==='admin');
+  try{ const r=await getDoc(doc(db,'org_roles',currentUser.uid)); if(r.exists()&&(r.data().teacherOf||[]).includes(id)) isT=true; }catch{}
+  canLec=isT;
+  $('#lecTitle').textContent='محاضرات '+c.name;
+  loadLectures(); go('lecture');
+};
 async function createLecture(){
   const name=$('#lName').value.trim();
   if(!name) return toast('اكتب اسم المحاضرة','warn');
@@ -531,6 +551,35 @@ async function loadLectures(){
   el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح</button>'+actions('lecture',x.id,x.fileId)+'</div></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
 }
 window.openLec=(id)=>{ const x=LECTURES.find(a=>a.id===id); if(!x)return; META[id]={fileId:null,fileName:x.name,fileDeleted:true}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,fileSize:0,fileId:null,fileDeleted:true}); go('res'); };
+window.genTeacherCode=async()=>{
+  if(!currentCourse) return toast('مفيش مادة مختارة','err');
+  const code='TCH-'+rid()+'-'+rid();
+  try {
+    await setDoc(doc(db,'invites',code),{role:'teacher',courseId:currentCourse.id,collegeId:(currentCollege?currentCollege.id:''),courseName:currentCourse.name,collegeName:(currentCollege?currentCollege.name:''),active:true,usedBy:[],createdBy:currentUser.uid,createdAt:serverTimestamp()});
+    try{ await navigator.clipboard.writeText(code); }catch{}
+    toast('اتولّد كود الدكتور: '+code+' (اتنسخ)','ok');
+  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+};
+window.claimTeacher=async()=>{
+  const code=$('#djoinCode').value.trim().toUpperCase();
+  if(!code) return toast('اكتب الكود','warn');
+  try {
+    const inv=await getDoc(doc(db,'invites',code));
+    if(!inv.exists()) return toast('مفيش كود دعوة ده','err');
+    const d=inv.data();
+    if(!d.active) return toast('الكود ده اتلغى','err');
+    if((d.usedBy||[]).includes(currentUser.uid)) return toast('الكود ده اتستخدم قبلك','err');
+    const ore=doc(db,'org_roles',currentUser.uid);
+    const ex=await getDoc(ore);
+    if(!ex.exists()) await setDoc(ore,{super:false,deansOf:[],headsOf:[],teacherOf:[],memberOf:[]});
+    await updateDoc(ore,{teacherOf:arrayUnion(d.courseId),memberOf:arrayUnion(d.collegeId),claimCode:code});
+    await updateDoc(doc(db,'invites',code),{usedBy:arrayUnion(currentUser.uid)});
+    toast('اتفعّلت كدكتور في '+d.courseName+' 🎉','ok');
+    $('#djoinCode').value='';
+    if(userRole!=='admin') userRole='teacher';
+    loadMy(); go('my');
+  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+};
 window.joinByCode=async()=>{
   const code=$('#joinCode').value.trim().toUpperCase();
   if(!code) return toast('اكتب الكود','warn');
@@ -558,7 +607,7 @@ window.myCollege=(cid)=>{ const c=MY.find(x=>x.id===cid); if(!c)return; currentC
 window.loadRole=loadRole; window.createCollege=createCollege; window.genCollegeCode=genCollegeCode; window.loadColleges=loadColleges;
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
-window.joinByCode=joinByCode; window.loadMy=loadMy; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
+window.joinByCode=joinByCode; window.loadMy=loadMy; window.genTeacherCode=genTeacherCode; window.claimTeacher=claimTeacher; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth=()=>$('#authModal').classList.add('hidden');
@@ -576,13 +625,14 @@ onAuthStateChanged(auth,u=>{
   else { $('#landing').classList.remove('hidden'); $('#app').classList.add('hidden'); $('#navLinks').classList.remove('hidden'); $('#navUser').classList.add('hidden'); }
 });
 function applyView(v){
-  ['dash','upload','proc','res','lib','my','join','admin','dept','sem','course','lecture'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
+  ['dash','upload','proc','res','lib','my','join','djoin','admin','dept','sem','course','lecture'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
   $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   const rf=readOnly?'none':'block';
   const df=$('#dForm'); if(df) df.style.display=rf;
   const sf=$('#smForm'); if(sf) sf.style.display=rf;
   const cf=$('#coForm'); if(cf) cf.style.display=rf;
-  const lf=$('#lecUploadCard'); if(lf) lf.style.display=(userRole==='admin'&&!readOnly)?'block':'none';
+  const lf=$('#lecUploadCard'); if(lf) lf.style.display=canLec?'block':'none';
+  const tc=$('#tcBtn'); if(tc) tc.style.display=(userRole==='admin'&&!readOnly)?'inline-flex':'none';
   if(v==='dash') loadStats();
   if(v==='my') loadMy();
   if(v==='admin') loadColleges();
