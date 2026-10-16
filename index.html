@@ -996,18 +996,6 @@ window.changeType=async(t)=>{
   }
 };
 /* ====== نهاية الكتلة ١ — لا تفتح الموقع الآن، احفظ (Commit) وقولي "كمّل" ====== */
-window.loadRole=loadRole; window.ensureUserDoc=ensureUserDoc; window.createCollege=createCollege; window.genCollegeCode=genCollegeCode; window.loadColleges=loadColleges;
-window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
-window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
-window.joinByCode=joinByCode; window.loadMy=loadMy; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
-window.openDoc=openDoc; window.closeDoc=closeDoc; window.appointDoctor=appointDoctor; window.openStudents=openStudents;
-window.fillAccount=fillAccount; window.changeName=changeName; window.changePass=changePass; window.deleteAccount=deleteAccount;
-window.loadFavs=loadFavs; window.toggleFav=toggleFav; window.renderFav=renderFav; window.filterLib=filterLib; window.favStar=favStar;
-window.askConfirm=askConfirm; window.askPrompt=askPrompt; window.cfYes=cfYes; window.cfNo=cfNo; window.prOk=prOk; window.prCancel=prCancel; window.filterHome=filterHome; window.filterMy=filterMy;
-window.changePhoto=changePhoto; window.removePhoto=removePhoto; window.resizeImage=resizeImage; window.loadHeaderAvatar=loadHeaderAvatar;
-window.ensureKatex=ensureKatex; window.renderMath=renderMath; window.extractTextLocal=extractTextLocal; window.runDiag=runDiag; window.changeType=changeType; window.rmPicked=rmPicked;
-window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
-
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth=()=>$('#authModal').classList.add('hidden');
 window.setAuth=m=>{ $('#tabLogin').classList.toggle('on',m==='login'); $('#tabReg').classList.toggle('on',m==='register'); $('#fName').classList.toggle('hidden',m==='login'); $('#aSubmit').textContent=m==='login'?'تسجيل الدخول':'إنشاء حساب'; $('#authForm').dataset.mode=m; };
@@ -1219,7 +1207,24 @@ async function loadLibrary(){
 }
 window.delRec=async(id)=>{ if(!await askConfirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} const ids=m.fileIds|| (m.fileId?[m.fileId]:[]); for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
 if(matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
+/* ===== الجسر: بيخلّي دوال window أسماء حقيقية جوه الـ script (يحل rmPicked not defined) ===== */
+const toggleTheme=window.toggleTheme, cancelTask=window.cancelTask, openTask=window.openTask, dismissTask=window.dismissTask, cfYes=window.cfYes, cfNo=window.cfNo;
+const prOk=window.prOk, prCancel=window.prCancel, toggleFav=window.toggleFav, filterLib=window.filterLib, filterHome=window.filterHome, filterMy=window.filterMy;
+const changePhoto=window.changePhoto, removePhoto=window.removePhoto, runDiag=window.runDiag, changeName=window.changeName, changePass=window.changePass, deleteAccount=window.deleteAccount;
+const editItem=window.editItem, closeEdit=window.closeEdit, saveEdit=window.saveEdit, delItem=window.delItem, genCollegeCode=window.genCollegeCode, openDoc=window.openDoc;
+const closeDoc=window.closeDoc, appointDoctor=window.appointDoctor, openDept=window.openDept, openSem=window.openSem, openCourse=window.openCourse, openLecture=window.openLecture;
+const openLec=window.openLec, openStudents=window.openStudents, joinByCode=window.joinByCode, myCollege=window.myCollege, changeType=window.changeType, rmPicked=window.rmPicked;
+const openAuth=window.openAuth, closeAuth=window.closeAuth, setAuth=window.setAuth, logout=window.logout, go=window.go, goBack=window.goBack;
+const summarize=window.summarize, toggleAcc=window.toggleAcc, copySum=window.copySum, dlSum=window.dlSum, dlOrig=window.dlOrig, openRec=window.openRec, delRec=window.delRec;
+/* ===== ربط دوال الـ function على window عشان أزرار onclick ===== */
+if(typeof createCollege!=='undefined')window.createCollege=createCollege;
+if(typeof createDept!=='undefined')window.createDept=createDept;
+if(typeof createSem!=='undefined')window.createSem=createSem;
+if(typeof createCourse!=='undefined')window.createCourse=createCourse;
+if(typeof createLecture!=='undefined')window.createLecture=createLecture;
+/* ===== شبكة أمان: لو أي زر لسه مش لاقي دالته، الـ watchdog يقولك اسمها ===== */
+['toggleTheme','logout','openAuth','setAuth','closeAuth','go','goBack','summarize','runDiag','filterHome','filterLib','filterMy','joinByCode','createCollege','createDept','createSem','createCourse','createLecture','openDept','openSem','openCourse','openLecture','openLec','openRec','openStudents','changeName','changePhoto','removePhoto','changePass','deleteAccount','cfNo','cfYes','prCancel','prOk','closeEdit','saveEdit','closeDoc','appointDoctor','editItem','delItem','genCollegeCode','openDoc','myCollege','toggleFav','dlOrig','delRec','cancelTask','openTask','dismissTask','copySum','dlSum','changeType','rmPicked','toggleAcc'].forEach(n=>{ if(typeof window[n]!=='function' && window.__bootErr) window.__bootErr('⚠️ الدالة '+n+' مش متاحة للأزرار — في اسم ناقص في الجسر فوق'); });
+/* ===== نهاية الكتلة ٢ ===== */
 </script>
 </body>
 </html>
-/* ====== نهاية الملف — آخر سطر لازم يكون </html> ====== */
