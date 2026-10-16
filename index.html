@@ -58,7 +58,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 .band .btn-p:hover{background:#f1f5f9}
 footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid var(--border);margin-top:40px}
 .modal{position:fixed;inset:0;background:rgba(2,6,23,.5);z-index:100;display:grid;place-items:center;padding:20px}
-.modal-card{width:min(440px,100%);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;box-shadow:var(--shadow)}
+.modal-card{width:min(440px,100%);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px;box-shadow:var(--shadow);max-height:90vh;overflow:auto}
 .tabs{display:flex;gap:8px;padding:6px;border-radius:14px;background:var(--surface2);border:1px solid var(--border);margin-bottom:18px}
 .tab{flex:1;border:none;background:transparent;color:var(--muted);padding:10px;border-radius:10px;font-weight:800;cursor:pointer}
 .tab.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow)}
@@ -66,6 +66,10 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 .field label{display:block;margin-bottom:7px;font-weight:700;font-size:14px}
 .inp{width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border);background:var(--surface2);color:var(--text);outline:none}
 .inp:focus{border-color:var(--primary);box-shadow:0 0 0 4px var(--soft)}
+.radio-row{display:flex;flex-direction:column;gap:8px}
+.radio-row label{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer}
+.chk-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:12px;padding:10px;background:var(--surface2)}
+.chk-list label{display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;font-size:14px}
 .app{display:grid;grid-template-columns:250px 1fr;min-height:calc(100vh - 64px)}
 .side{background:var(--surface);border-inline-end:1px solid var(--border);padding:18px;display:flex;flex-direction:column;gap:8px}
 .side .nav-i{display:flex;align-items:center;gap:10px;padding:12px;border:none;border-radius:14px;background:transparent;color:var(--muted);font-weight:700;cursor:pointer;text-align:start;width:100%}
@@ -223,7 +227,6 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <button class="nav-i" data-v="upload" onclick="go('upload')">⬆️<span>رفع</span></button>
 <button class="nav-i" data-v="lib" onclick="go('lib')">📚<span>مكتبتي</span></button>
 <button class="nav-i" data-v="my" onclick="go('my')">🎓<span>موادي</span></button>
-<button class="nav-i" data-v="djoin" onclick="go('djoin')">🧑‍<span>انضمام دكتور</span></button>
 <button class="nav-i hidden" data-v="admin" id="navAdmin" onclick="go('admin')">🏛️<span>إدارة</span></button>
 <div class="side-foot"><span class="pill" id="sideEmail"></span></div>
 </aside>
@@ -312,7 +315,7 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div id="semList"></div>
 </section>
 <section id="v-course" class="hidden">
-<div class="head"><div><h1 id="courseTitle">المواد</h1><p>مواد الفصل</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="go('sem')">→ رجوع</button><button class="btn btn-p" id="tcBtn" onclick="genTeacherCode()">🎓 كود دكتور</button></div></div>
+<div class="head"><div><h1 id="courseTitle">المواد</h1><p>مواد الفصل</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="go('sem')">→ رجوع</button><button class="btn btn-p" id="tcBtn" onclick="openAddTeacher()">🧑🏫 أضف دكتور</button></div></div>
 <div class="card" style="margin-bottom:14px" id="coForm">
 <div class="head"><h1 style="font-size:18px">➕ مادة جديدة</h1></div>
 <div class="field"><label>اسم المادة</label><input class="inp" id="coName" placeholder="مثال: المورفولوجيا"></div>
@@ -338,14 +341,6 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="head"><h1 style="font-size:18px">🎬 المحاضرات</h1></div>
 <div id="lecList"></div>
 </section>
-<section id="v-djoin" class="hidden">
-<div class="head"><div><h1>انضمام دكتور</h1><p>اكتب كود الدعوة اللي الإدارة/العميد اداك ياه</p></div></div>
-<div class="card">
-<div class="field"><label>كود الدعوة</label><input class="inp" id="djoinCode" placeholder="مثال: TCH-A3F9K2-X7B2M1"></div>
-<button class="btn btn-p" style="width:100%" onclick="claimTeacher()">🧑‍🏫 فعّل حسابي كدكتور</button>
-<p style="color:var(--muted);font-size:13px;margin-top:12px">بعد التفعيل، المادة هتظهر في "موادي" وتقدر ترفع فيها محاضرات.</p>
-</div>
-</section>
 </main>
 </div></div>
 <div class="modal hidden" id="editModal"><div class="modal-card">
@@ -353,6 +348,25 @@ footer{padding:30px 0;text-align:center;color:var(--muted);border-top:1px solid 
 <div class="field"><label>الاسم</label><input class="inp" id="editF1"></div>
 <div class="field" id="editF2wrap"><label id="editL2">الاختصار</label><input class="inp" id="editF2"></div>
 <button class="btn btn-p" style="width:100%" onclick="saveEdit()">💾 احفظ</button>
+</div></div>
+<div class="modal hidden" id="teacherModal"><div class="modal-card">
+<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">🧑‍ إضافة دكتور</h1><button class="btn btn-g" onclick="closeTeacher()">✕</button></div>
+<div class="field"><label>بريد الدكتور الإلكتروني</label><input class="inp" id="tEmail" type="email" placeholder="example@mail.com"></div>
+<div class="field"><label>نطاق التدريس</label>
+<div class="radio-row">
+<label><input type="radio" name="tScope" value="all" checked onchange="toggleTScope()"> كل مواد الكلية</label>
+<label><input type="radio" name="tScope" value="courses" onchange="toggleTScope()"> مواد محددة</label>
+</div>
+</div>
+<div class="field hidden" id="tCourseWrap"><label>اختار المواد</label><div class="chk-list" id="tCourseList"></div></div>
+<p style="color:var(--muted);font-size:13px;margin-bottom:12px">لازم الدكتور يكون عمل حساب بالبريد ده الأول. بعد الإضافة، هيقدر يرفع محاضرات في المواد دي.</p>
+<button class="btn btn-p" style="width:100%" onclick="addTeacherByEmail()">➕ أضفه دكتور</button>
+</div></div>
+<div class="modal hidden" id="deanModal"><div class="modal-card">
+<div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">👔 تعيين عميد</h1><button class="btn btn-g" onclick="closeDean()">✕</button></div>
+<div class="field"><label>بريد العميد الإلكتروني</label><input class="inp" id="dEmail" type="email" placeholder="example@mail.com"></div>
+<p style="color:var(--muted);font-size:13px;margin-bottom:12px">العميد هيقدر يضيف دكاترة في هذه الكلية بس.</p>
+<button class="btn btn-p" style="width:100%" onclick="appointDean()">عيّن عميد</button>
 </div></div>
 <script type="module">
 const FIREBASE_CONFIG = {
@@ -382,12 +396,13 @@ function toast(m,t=''){ const d=document.createElement('div'); d.className='tst 
 window.toggleTheme = () => { const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); };
 let currentUser=null, pickedFile=null, pickedURL=null, lecFile=null, lecURL=null;
 const META = {};
-let userRole=null, backTo='course', readOnly=false;
+let userRole=null, backTo='course', readOnly=false, canLec=false, canManage=false;
+let myDeansOf=[], myTeacherOf=[];
 let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
 let editType=null, editId=null, editFileId=null;
-let canLec=false;
 const TASKS={}; let taskSeq=0;
+
 function renderTasks(){
   const el=$('#tasks'); if(!el) return;
   const list=Object.values(TASKS);
@@ -407,13 +422,28 @@ window.dismissTask=id=>{ delete TASKS[id]; renderTasks(); };
 function newTask(name){ const id='t'+(++taskSeq); TASKS[id]={id,name,status:'active',progress:5,msg:'بيرفع الملف…',controller:new AbortController(),fileId:null,rec:null,courseId:null}; renderTasks(); return TASKS[id]; }
 function updTask(t,p,m){ t.progress=p; t.msg=m; renderTasks(); }
 function failTask(t,err){ if(!TASKS[t.id]) return; if(err&&err.name==='AbortError') return; t.status='error'; t.progress=100; t.msg=(err&&err.message)||'حصل خطأ'; renderTasks(); if(t.fileId){ worker('/file/'+t.fileId,{method:'DELETE'}).catch(()=>{}); } }
+
+async function ensureUserDoc(){
+  if(!currentUser) return;
+  try{
+    const ref=doc(db,'users',currentUser.uid);
+    const ex=await getDoc(ref);
+    if(!ex.exists()){
+      await setDoc(ref,{uid:currentUser.uid,email:(currentUser.email||'').toLowerCase(),name:currentUser.displayName||'',role:'student',createdAt:serverTimestamp()});
+    }
+  }catch(e){}
+}
 async function loadRole(){
   if(!currentUser) return;
-  try { const d = await getDoc(doc(db,'users',currentUser.uid)); userRole = d.exists() ? (d.data().role||'student') : 'student'; }
-  catch(e){ userRole='student'; }
-  const b = document.getElementById('navAdmin');
-  if(b) b.classList.toggle('hidden', userRole!=='admin');
-  if(userRole==='admin') loadColleges();
+  let ur='student';
+  try{ const d=await getDoc(doc(db,'users',currentUser.uid)); ur=d.exists()?(d.data().role||'student'):'student'; }catch{}
+  try{
+    const or=await getDoc(doc(db,'org_roles',currentUser.uid));
+    if(or.exists()){ const od=or.data(); myDeansOf=od.deansOf||[]; myTeacherOf=od.teacherOf||[]; if(od.super) ur='admin'; }
+  }catch{}
+  userRole=ur;
+  const b=$('#navAdmin'); if(b) b.classList.toggle('hidden', ur!=='admin');
+  if(ur==='admin') loadColleges();
 }
 function actions(type,id,fileId){
   if(userRole!=='admin'||readOnly) return '';
@@ -429,11 +459,8 @@ window.editItem=(type,id)=>{
   else if(type==='course'){ item=COURSES.find(x=>x.id===id); f1=item.name; f2=item.code; l2='كود المادة'; show2=true; title='تعديل المادة'; }
   else if(type==='lecture'){ item=LECTURES.find(x=>x.id===id); f1=item.name; editFileId=item.fileId; title='تعديل المحاضرة'; }
   if(!item) return;
-  $('#editTitle').textContent=title;
-  $('#editF1').value=f1;
-  $('#editL2').textContent=l2; $('#editF2').value=f2;
-  $('#editF2wrap').style.display=show2?'block':'none';
-  $('#editModal').classList.remove('hidden');
+  $('#editTitle').textContent=title; $('#editF1').value=f1; $('#editL2').textContent=l2; $('#editF2').value=f2;
+  $('#editF2wrap').style.display=show2?'block':'none'; $('#editModal').classList.remove('hidden');
 };
 window.closeEdit=()=>$('#editModal').classList.add('hidden');
 window.saveEdit=async()=>{
@@ -467,7 +494,7 @@ async function loadColleges(){
   const el=$('#collegeList'); if(!el) return;
   const snap=await getDocs(collection(db,'colleges'));
   COLLEGES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>')+'<button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
+  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>')+'<button class="btn btn-g" onclick="openDean(\''+x.id+'\',\''+esc(x.name)+'\')">👔 عميد</button><button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات لسه. أنشئ واحدة فوق ☝️</div>';
 }
 window.openDept=(id)=>{ const c=COLLEGES.find(x=>x.id===id); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=false; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
 async function createDept(){
@@ -551,35 +578,66 @@ async function loadLectures(){
   el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح</button>'+actions('lecture',x.id,x.fileId)+'</div></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
 }
 window.openLec=(id)=>{ const x=LECTURES.find(a=>a.id===id); if(!x)return; META[id]={fileId:null,fileName:x.name,fileDeleted:true}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,fileSize:0,fileId:null,fileDeleted:true}); go('res'); };
-window.genTeacherCode=async()=>{
-  if(!currentCourse) return toast('مفيش مادة مختارة','err');
-  const code='TCH-'+rid()+'-'+rid();
-  try {
-    await setDoc(doc(db,'invites',code),{role:'teacher',courseId:currentCourse.id,collegeId:(currentCollege?currentCollege.id:''),courseName:currentCourse.name,collegeName:(currentCollege?currentCollege.name:''),active:true,usedBy:[],createdBy:currentUser.uid,createdAt:serverTimestamp()});
-    try{ await navigator.clipboard.writeText(code); }catch{}
-    toast('اتولّد كود الدكتور: '+code+' (اتنسخ)','ok');
-  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+
+window.toggleTScope=()=>{ const v=$('input[name=tScope]:checked').value; $('#tCourseWrap').classList.toggle('hidden', v!=='courses'); };
+window.openAddTeacher=async()=>{
+  if(!currentCollege) return toast('افتح الكلية الأول','warn');
+  $('#tEmail').value='';
+  $('input[name=tScope][value=all]').checked=true; $('#tCourseWrap').classList.add('hidden');
+  try{
+    const cs=await getDocs(query(collection(db,'courses'),where('collegeId','==',currentCollege.id)));
+    const list=cs.docs.map(x=>({id:x.id,...x.data()}));
+    $('#tCourseList').innerHTML=list.length?list.map(c=>'<label><input type="checkbox" value="'+c.id+'"> '+esc(c.name)+'</label>').join(''):'<small style="color:var(--muted)">مفيش مواد في الكلية دي لسه.</small>';
+  }catch(e){ $('#tCourseList').innerHTML='<small style="color:var(--err)">خطأ في تحميل المواد</small>'; }
+  $('#teacherModal').classList.remove('hidden');
 };
-window.claimTeacher=async()=>{
-  const code=$('#djoinCode').value.trim().toUpperCase();
-  if(!code) return toast('اكتب الكود','warn');
-  try {
-    const inv=await getDoc(doc(db,'invites',code));
-    if(!inv.exists()) return toast('مفيش كود دعوة ده','err');
-    const d=inv.data();
-    if(!d.active) return toast('الكود ده اتلغى','err');
-    if((d.usedBy||[]).includes(currentUser.uid)) return toast('الكود ده اتستخدم قبلك','err');
-    const ore=doc(db,'org_roles',currentUser.uid);
+window.closeTeacher=()=>$('#teacherModal').classList.add('hidden');
+window.addTeacherByEmail=async()=>{
+  const email=$('#tEmail').value.trim().toLowerCase();
+  if(!email) return toast('اكتب بريد الدكتور','warn');
+  if(!currentCollege) return toast('مفيش كلية مختارة','err');
+  const scope=$('input[name=tScope]:checked').value;
+  let courseIds=[], collegeIds=[currentCollege.id];
+  if(scope==='all'){
+    try{ const cs=await getDocs(query(collection(db,'courses'),where('collegeId','==',currentCollege.id))); courseIds=cs.docs.map(x=>x.id); }catch(e){ return toast('فشل تحميل المواد','err'); }
+  } else {
+    courseIds=$$('#tCourseList input:checked').map(i=>i.value);
+    collegeIds=[...new Set(courseIds.map(id=>{const c=COURSES.find(x=>x.id===id);return c?c.collegeId:currentCollege.id;}).filter(Boolean))];
+  }
+  if(!courseIds.length) return toast('مفيش مواد في النطاق ده','warn');
+  try{
+    const snap=await getDocs(query(collection(db,'users'),where('email','==',email)));
+    if(snap.empty) return toast('مفيش حساب بالبريد ده. خلّيه يسجّل أول.','err');
+    const uid=snap.docs[0].id;
+    if(uid===currentUser.uid) return toast('مش هتضيف نفسك','warn');
+    const ore=doc(db,'org_roles',uid);
     const ex=await getDoc(ore);
-    if(!ex.exists()) await setDoc(ore,{super:false,deansOf:[],headsOf:[],teacherOf:[],memberOf:[]});
-    await updateDoc(ore,{teacherOf:arrayUnion(d.courseId),memberOf:arrayUnion(d.collegeId),claimCode:code});
-    await updateDoc(doc(db,'invites',code),{usedBy:arrayUnion(currentUser.uid)});
-    toast('اتفعّلت كدكتور في '+d.courseName+' 🎉','ok');
-    $('#djoinCode').value='';
-    if(userRole!=='admin') userRole='teacher';
-    loadMy(); go('my');
-  } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+    if(!ex.exists()) await setDoc(ore,{super:false,deansOf:[],headsOf:[],teacherOf:courseIds,teacherColleges:collegeIds,memberOf:[]});
+    else await updateDoc(ore,{teacherOf:arrayUnion(...courseIds),teacherColleges:arrayUnion(...collegeIds)});
+    toast('اتعيّن دكتور في '+courseIds.length+' مادة ✓','ok');
+    closeTeacher();
+  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 };
+window.openDean=(cid,cname)=>{ currentCollege={id:cid,name:cname}; $('#dEmail').value=''; $('#deanModal').classList.remove('hidden'); };
+window.closeDean=()=>$('#deanModal').classList.add('hidden');
+window.appointDean=async()=>{
+  const email=$('#dEmail').value.trim().toLowerCase();
+  if(!email) return toast('اكتب بريد العميد','warn');
+  if(!currentCollege) return toast('مفيش كلية مختارة','err');
+  try{
+    const snap=await getDocs(query(collection(db,'users'),where('email','==',email)));
+    if(snap.empty) return toast('مفيش حساب بالبريد ده. خلّيه يسجّل أول.','err');
+    const uid=snap.docs[0].id;
+    if(uid===currentUser.uid) return toast('مش هتعيّن نفسك','warn');
+    const ore=doc(db,'org_roles',uid);
+    const ex=await getDoc(ore);
+    if(!ex.exists()) await setDoc(ore,{super:false,deansOf:[currentCollege.id],headsOf:[],teacherOf:[],teacherColleges:[],memberOf:[]});
+    else await updateDoc(ore,{deansOf:arrayUnion(currentCollege.id)});
+    toast('اتعيّن عميد لـ '+currentCollege.name+' ✓','ok');
+    closeDean();
+  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+};
+
 window.joinByCode=async()=>{
   const code=$('#joinCode').value.trim().toUpperCase();
   if(!code) return toast('اكتب الكود','warn');
@@ -588,7 +646,7 @@ window.joinByCode=async()=>{
     if(snap.empty) return toast('مفيش كلية بالكود ده','err');
     const cid=snap.docs[0].id; const ref=doc(db,'org_roles',currentUser.uid); const ex=await getDoc(ref);
     if(ex.exists()) await updateDoc(ref,{memberOf:arrayUnion(cid)});
-    else await setDoc(ref,{super:false,deansOf:[],headsOf:[],teacherOf:[],memberOf:[cid]});
+    else await setDoc(ref,{super:false,deansOf:[],headsOf:[],teacherOf:[],teacherColleges:[],memberOf:[cid]});
     toast('انضميت للكلية 🎉','ok'); $('#joinCode').value=''; go('my'); loadMy();
   } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 };
@@ -596,19 +654,25 @@ async function loadMy(){
   const el=$('#myList'); if(!el) return;
   try {
     const r=await getDoc(doc(db,'org_roles',currentUser.uid));
-    if(!r.exists()||!(r.data().memberOf||[]).length){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
-    const ids=r.data().memberOf;
+    if(!r.exists()){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
+    const d=r.data();
+    const ids=[...new Set([...(d.memberOf||[]),...(d.teacherColleges||[])])];
+    if(!ids.length){ el.innerHTML='<div class="empty">مفيش كليات لسه. دوس "انضمام بكود" فوق 🔑</div>'; return; }
     const snap=await getDocs(query(collection(db,'colleges'),where('__name__','in',ids)));
-    MY=snap.docs.map(d=>({id:d.id,...d.data()}));
+    MY=snap.docs.map(x=>({id:x.id,...x.data()}));
     el.innerHTML=MY.length?MY.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.code)+'</small></div><button class="btn btn-s" onclick="myCollege(\''+x.id+'\')">ادخل الكلية ←</button></div>').join(''):'<div class="empty">مفيش كليات.</div>';
   } catch(e){ el.innerHTML='<div class="empty">خطأ: '+esc(e.message)+'</div>'; }
 }
 window.myCollege=(cid)=>{ const c=MY.find(x=>x.id===cid); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=true; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); };
-window.loadRole=loadRole; window.createCollege=createCollege; window.genCollegeCode=genCollegeCode; window.loadColleges=loadColleges;
+
+window.loadRole=loadRole; window.ensureUserDoc=ensureUserDoc; window.createCollege=createCollege; window.genCollegeCode=genCollegeCode; window.loadColleges=loadColleges;
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
-window.joinByCode=joinByCode; window.loadMy=loadMy; window.genTeacherCode=genTeacherCode; window.claimTeacher=claimTeacher; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
+window.joinByCode=joinByCode; window.loadMy=loadMy; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
+window.openAddTeacher=openAddTeacher; window.closeTeacher=closeTeacher; window.addTeacherByEmail=addTeacherByEmail; window.toggleTScope=toggleTScope;
+window.openDean=openDean; window.closeDean=closeDean; window.appointDean=appointDean;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
+
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth=()=>$('#authModal').classList.add('hidden');
 window.setAuth=m=>{ $('#tabLogin').classList.toggle('on',m==='login'); $('#tabReg').classList.toggle('on',m==='register'); $('#fName').classList.toggle('hidden',m==='login'); $('#aSubmit').textContent=m==='login'?'تسجيل الدخول':'إنشاء حساب'; $('#authForm').dataset.mode=m; };
@@ -621,18 +685,19 @@ function trErr(c){ return {'auth/email-already-in-use':'البريد مسجّل 
 window.logout=async()=>{ await signOut(auth); };
 onAuthStateChanged(auth,u=>{
   currentUser=u;
-  if(u){ $('#landing').classList.add('hidden'); $('#app').classList.remove('hidden'); $('#navLinks').classList.add('hidden'); $('#navUser').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; go('dash'); loadLibrary(); loadRole(); loadMy(); }
+  if(u){ ensureUserDoc(); $('#landing').classList.add('hidden'); $('#app').classList.remove('hidden'); $('#navLinks').classList.add('hidden'); $('#navUser').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; go('dash'); loadLibrary(); loadRole(); loadMy(); }
   else { $('#landing').classList.remove('hidden'); $('#app').classList.add('hidden'); $('#navLinks').classList.remove('hidden'); $('#navUser').classList.add('hidden'); }
 });
 function applyView(v){
-  ['dash','upload','proc','res','lib','my','join','djoin','admin','dept','sem','course','lecture'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
+  ['dash','upload','proc','res','lib','my','join','admin','dept','sem','course','lecture'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
   $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   const rf=readOnly?'none':'block';
   const df=$('#dForm'); if(df) df.style.display=rf;
   const sf=$('#smForm'); if(sf) sf.style.display=rf;
   const cf=$('#coForm'); if(cf) cf.style.display=rf;
   const lf=$('#lecUploadCard'); if(lf) lf.style.display=canLec?'block':'none';
-  const tc=$('#tcBtn'); if(tc) tc.style.display=(userRole==='admin'&&!readOnly)?'inline-flex':'none';
+  canManage=(userRole==='admin')||(currentCollege&&myDeansOf.includes(currentCollege.id));
+  const tc=$('#tcBtn'); if(tc) tc.style.display=canManage?'inline-flex':'none';
   if(v==='dash') loadStats();
   if(v==='my') loadMy();
   if(v==='admin') loadColleges();
