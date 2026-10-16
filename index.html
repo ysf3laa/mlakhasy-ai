@@ -602,13 +602,13 @@ async function ocrPdf(file){
   return all;
 }
 async function extractTextLocal(file){
-  const isImg=file.type.startsWith('image/');
+  const isImg=file.type.startsWith('image/')||/\.(jpe?g|png|webp|gif|bmp)$/i.test(file.name);
   const isPdf=file.type==='application/pdf'||/\.pdf$/i.test(file.name);
   const isTxt=file.type==='text/plain'||/\.(txt|md)$/i.test(file.name);
   if(isTxt) return await file.text();
-  if(!isImg&&!isPdf) return '';
-  if(isImg) return await ocrImage(file);
-  return await ocrPdf(file);
+  if(isImg) return '';
+  if(isPdf) return await ocrPdf(file);
+  return '';
 }
 
 let _katexPromise=null;
