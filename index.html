@@ -173,7 +173,33 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 .qz-best{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;background:rgba(16,185,129,.12);color:#047857;border:1px solid rgba(16,185,129,.3)}
 [data-theme=dark] .qz-best{color:#34d399}
 .qz-loading{text-align:center;padding:40px;color:var(--muted)}
+.ask-layout{display:grid;grid-template-columns:240px 1fr;gap:14px}
+.ask-side{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:10px;max-height:70vh;overflow:auto;display:grid;gap:6px;align-content:start}
+.ask-item{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;border:1px solid transparent;background:var(--surface2);cursor:pointer;text-align:start;width:100%}
+.ask-item.on{border-color:var(--primary);background:var(--soft)}
+.ask-item .t{flex:1;min-width:0;font-weight:700;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ask-item .m{font-size:11px;color:var(--muted)}
+.ask-main{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:60vh}
+.ask-scopebar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ask-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;background:var(--soft);color:var(--primary);font-weight:800;font-size:13px}
+.ask-chip button{border:none;background:transparent;color:inherit;cursor:pointer;font-weight:800}
+.ask-msgs{flex:1;overflow:auto;display:grid;gap:10px;align-content:start;padding:4px;min-height:200px;max-height:55vh}
+.ask-b{max-width:85%;padding:12px 14px;border-radius:16px;line-height:1.8;font-size:15px;word-break:break-word}
+.ask-b.user{align-self:flex-start;background:var(--primary);color:#fff;border-end-start-radius:4px}
+.ask-b.bot{align-self:flex-end;background:var(--surface2);border:1px solid var(--border);border-end-end-radius:4px}
+.ask-b.err{border-color:rgba(244,63,94,.4);background:rgba(244,63,94,.06)}
+.ask-srcs{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.ask-src{font-size:11px;padding:3px 9px;border-radius:999px;background:var(--soft);color:var(--primary);font-weight:800}
+.ask-typing{display:inline-flex;gap:4px;align-items:center}
+.ask-typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1s infinite}
+.ask-typing i:nth-child(2){animation-delay:.2s}.ask-typing i:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.ask-composer{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.ask-input{flex:1;min-width:160px;min-height:46px;resize:vertical}
+.ask-imgprev{display:inline-flex;align-items:center;gap:6px}
+.ask-imgprev img{width:42px;height:42px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}
 @media(max-width:860px){
+.ask-layout{grid-template-columns:1fr}.ask-side{max-height:150px;order:2}.ask-main{order:1}
 .app{grid-template-columns:1fr}
 .side{position:fixed;bottom:0;left:0;right:0;top:auto;flex-direction:row;justify-content:space-around;align-items:center;border-inline-end:none;border-top:1px solid var(--border);padding:8px 6px;z-index:60;box-shadow:0 -4px 16px rgba(15,23,42,.06)}
 .side .nav-i{flex-direction:column;gap:3px;padding:6px 12px;font-size:12px;text-align:center;width:auto;border-radius:12px}
@@ -239,6 +265,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <button class="nav-i on" data-v="dash" onclick="go('dash')">🏠<span>الرئيسية</span></button>
 <button class="nav-i" data-v="upload" onclick="go('upload')">⬆️<span>رفع</span></button>
 <button class="nav-i" data-v="lib" onclick="go('lib')">📚<span>مكتبتي</span></button>
+<button class="nav-i" data-v="ask" onclick="go('ask')">💬<span>اسأل ملفاتي</span></button>
 <button class="nav-i" data-v="my" onclick="go('my')">🎓<span>موادي</span></button>
 <button class="nav-i" data-v="fav" onclick="go('fav')">⭐<span>مفضلة</span></button>
 <button class="nav-i" data-v="acct" onclick="go('acct')">👤<span>حسابي</span></button>
@@ -288,6 +315,26 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <section id="v-quiz" class="hidden">
 <div class="head"><div><button class="btn btn-g" onclick="exitQuiz()" style="margin-bottom:8px">→ خروج</button><h1 id="qzTitle">امتحان</h1><p id="qzSub"></p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="qz-best hidden" id="qzBest"></span><button class="btn btn-s" onclick="newQuiz()">🔄 امتحان جديد</button></div></div>
 <div class="qz-wrap"><div class="qz-prog"><i id="qzBar"></i></div><div id="qzBody"></div></div>
+</section>
+<section id="v-ask" class="hidden">
+<div class="head"><div><h1>💬 اسأل ملفاتي</h1><p>اسأل أي سؤال وهنجاوبك من ملخصاتك ومحاضراتك بس — مش من بره. تقدر ترفق صورة سؤال كمان.</p></div><button class="btn btn-p" onclick="newAskChat()">➕ محادثة جديدة</button></div>
+<div class="ask-layout">
+<aside class="ask-side"><div id="askChats"></div></aside>
+<div class="ask-main">
+<div class="ask-scopebar">
+<select class="inp" id="askScopeSel" onchange="setAskScope(this.value)" style="width:auto"><option value="all">كل ملفاتي</option><option value="course">المادة الحالية</option></select>
+<span id="askScopeChip" class="hidden"></span>
+</div>
+<div class="ask-msgs" id="askMsgs"></div>
+<div class="ask-composer">
+<button class="btn btn-s" onclick="askAttachImage()" title="مرفق صورة">🖼️</button>
+<span id="askImgPrev" class="hidden"></span>
+<input type="file" id="askImgFile" accept="image/*" hidden>
+<textarea class="qz-ta ask-input" id="askInput" rows="2" placeholder="اكتب سؤالك… (Enter للإرسال، Shift+Enter لسطر جديد)"></textarea>
+<button class="btn btn-p" onclick="askSend()">إرسال ➤</button>
+</div>
+</div>
+</div>
 </section>
 <section id="v-lib" class="hidden">
 <div class="head"><div><h1>مكتبتي</h1><p>كل ملخصاتك وملفاتك في مكان واحد</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع</button></div>
@@ -469,6 +516,7 @@ let FAVS=new Set(), FAV_TITLES={}, FAV_REG={}, LIB_DOCS=[], HOME_DOCS=[];
 let editType=null, editId=null, editFileId=null;
 let myPhotoUrl='';
 const TASKS={}; let taskSeq=0;
+let CHATS=[], currentChatId=null, askScope='all', askFileLabel='', askImageFileId=null, askImageUrl=null, askMsgs=[], askBusy=false;
 
 function renderTasks(){
   const el=$('#tasks'); if(!el) return;
@@ -797,6 +845,7 @@ window.deleteAccount=async()=>{
   toast('بمسح بياناتك… استنى شوية','warn');
   try{ const s=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid))); for(const d of s.docs){ const x=d.data(); const ids=x.fileIds|| (x.fileId?[x.fileId]:[]); for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } try{ await deleteDoc(doc(db,'summaries',d.id)); }catch{} } }catch{}
   try{ const qa=await getDocs(query(collection(db,'quiz_attempts'),where('uid','==',currentUser.uid))); for(const d of qa.docs){ try{ await deleteDoc(doc(db,'quiz_attempts',d.id)); }catch{} } }catch{}
+  try{ const ac=await getDocs(query(collection(db,'ask_chats'),where('uid','==',currentUser.uid))); for(const d of ac.docs){ try{ await deleteDoc(doc(db,'ask_chats',d.id)); }catch{} } }catch{}
   try{ await worker('/avatar',{method:'DELETE'}); }catch{}
   try{ await deleteDoc(doc(db,'org_roles',currentUser.uid)); }catch{}
   try{ const m=await getDocs(query(collection(db,'members'),where('uid','==',currentUser.uid))); for(const d of m.docs){ try{ await deleteDoc(doc(db,'members',d.id)); }catch{} } }catch{}
@@ -1052,6 +1101,7 @@ function renderResult(rec){
   let html='<div class="head"><div><button class="btn btn-g" onclick="goBack()" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+bsBadge+(rec.isGroup?' <span class="pill p">مجموعة '+(rec.fileIds||[]).length+' ملفات</span>':'')+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+(s.wordCount||0).toLocaleString('ar-EG')+'</bdi> كلمة</span> <span class="pill"><bdi>'+(s.readingTime||1)+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
   if(canDl) html+='<button class="btn btn-s" onclick="dlOrig(\''+rec.id+'\')">📎 الملف الأصلي</button>';
   if(canQuiz) html+='<button class="btn btn-g" onclick="startQuizRec()">📝 اعمل امتحان</button>';
+  html+='<button class="btn btn-g" onclick="askAboutRec()">💬 اسأل عن ده</button>';
   html+='<button class="btn btn-s" onclick="copySum()">📋 نسخ</button><button class="btn btn-s" onclick="dlSum()">⬇️ الملخص</button></div></div>';
   html+=typeBar;
   if(tldr.length) html+='<div class="tldr"><h4>⚡ اقرأ في 15 ثانية</h4><ul>'+tldr.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ul></div>';
@@ -1068,7 +1118,7 @@ function renderResult(rec){
   ensureKatex().then(()=>renderMath($('#resBody'))).catch(()=>{});
 }
 
-/* ====================== محرك الامتحان ====================== */
+/* ====================== محرك الامتحان (A) ====================== */
 function startQuizRec(){ const rec=window._lastRec; if(!rec) return; loadQuizForRec(rec.col||'summaries', rec.id); }
 async function startQuizById(col,id){ await loadQuizForRec(col,id); }
 async function startCourseQuiz(courseId){
@@ -1241,6 +1291,55 @@ function retryQuiz(){ const ctx=window._quizCtx; if(!ctx||!ctx.quiz) return; ctx
 function newQuiz(){ const ctx=window._quizCtx; if(!ctx) return; ctx.quiz=null; ctx.answers=[]; ctx.idx=0; ctx.review=null; ctx.pct=null; $('#qzSub').textContent='بيولّد أسئلة جديدة…'; generateQuiz(); }
 function exitQuiz(){ const ctx=window._quizCtx; if(ctx&&ctx.from==='res'){ go('res'); } else { goBack(); } }
 
+/* ====================== اسأل ملفاتي (B) ====================== */
+const STOP=new Set(['في','من','على','عن','الى','ان','إن','هل','ما','ذا','هذه','ذلك','تلك','هو','هي','هم','كان','كانت','يكون','قد','لا','لم','لن','او','و','ثم','لكن','حتى','بينما','عندما','حيث','الذي','التي','الذين','كما','اي','كل','بعض','غير','مع','بدون','خلال','بعد','قبل','عند','لدى','اجل','منذ','حول','ضد','فوق','تحت','يمين','شمال','ده','دي','دول','انا','انت','احنا','انتم','دوت','ال','ب','ل','ف','ك','ه','ي','ا']);
+function normAr(s){ return String(s||'').replace(/[\u064B-\u0652\u0670\u0640]/g,'').replace(/[أإآٱ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').toLowerCase().replace(/\s+/g,' ').trim(); }
+function qTokens(s){ return normAr(s).split(/[^a-z0-9\u0621-\u064a]+/).filter(w=>w.length>2 && !STOP.has(w)); }
+function chunkText(t,size){ const segs=String(t||'').split(/\n+|[.!?؟]+\s*/).map(x=>x.trim()).filter(Boolean); const out=[]; let cur=''; for(const s of segs){ if((cur+' '+s).length>size){ if(cur) out.push(cur); cur=s; } else { cur=cur?cur+' '+s:s; } } if(cur) out.push(cur); return out.length?out:[String(t||'').slice(0,size)]; }
+function flatSummary(sm){ if(!sm) return ''; let o=''; if(sm.overview) o+=sm.overview+'\n'; (sm.sections||[]).forEach(x=>{ o+=(x.heading||'')+'\n'; (x.points||[]).forEach(p=>o+=p+'\n'); }); (sm.terms||[]).forEach(t=>o+=(t.term||'')+': '+(t.definition||'')+'\n'); (sm.questions||[]).forEach(q=>o+=q+'\n'); return o; }
+function unitFromData(src,x){ x=x||{}; const raw=String(x.rawText||''); const txt=(raw.replace(/\s/g,'').length>=40)?raw:flatSummary(x.summary); return {src:src||'ملف', text:String(txt||'').slice(0,20000)}; }
+function collectUnits(){ const mode=askScope||'all'; const units=[];
+  if(mode.indexOf('file:')===0){ const id=mode.slice(5); const rec=window._lastRec; if(rec&&rec.id===id){ units.push(unitFromData(rec.fileName||'ملف',rec)); return units; } const d=LIB_DOCS.find(z=>z.id===id); if(d){ const x=d.data(); units.push(unitFromData(x.fileName||'ملف',x)); return units; } const l=LECTURES.find(z=>z.id===id); if(l) units.push(unitFromData(l.name||'محاضرة',l)); return units; }
+  if(mode==='course'){ if(currentCourse) LECTURES.forEach(x=>units.push(unitFromData(x.name||'محاضرة',x))); return units; }
+  LIB_DOCS.forEach(d=>{ const x=d.data(); units.push(unitFromData(x.fileName||'ملف',x)); });
+  if(currentCourse) LECTURES.forEach(x=>units.push(unitFromData(x.name||'محاضرة',x)));
+  return units; }
+function retrieveSnippets(units,q){ const qt=qTokens(q); if(!qt.length) return []; const all=[];
+  units.forEach(u=>{ chunkText(u.text,600).forEach(ch=>{ const ct=normAr(ch); let hits=0; const seen={}; qt.forEach(t=>{ if(!seen[t] && ct.indexOf(t)>=0){ seen[t]=1; hits++; } }); if(hits>0) all.push({src:u.src,text:ch,score:hits}); }); });
+  all.sort((a,b)=>b.score-a.score); const out=[]; const cnt={};
+  for(const s of all){ const c=cnt[s.src]||0; if(c>=2) continue; cnt[s.src]=c+1; out.push(s); if(out.length>=8) break; }
+  return out; }
+function scopeLabelNow(){ if(askScope==='all') return 'كل ملفاتي'; if(askScope==='course') return 'المادة: '+(currentCourse?currentCourse.name:'—'); if(askScope.indexOf('file:')===0) return 'ملف: '+(askFileLabel||'—'); return 'كل ملفاتي'; }
+function ago(ms){ const d=Math.floor((Date.now()-(ms||0))/1000); if(d<60) return 'دلوقتي'; if(d<3600) return Math.floor(d/60)+' د'; if(d<86400) return Math.floor(d/3600)+' س'; return Math.floor(d/86400)+' ي'; }
+async function loadAskChats(){ if(!currentUser) return; try{ const snap=await getDocs(query(collection(db,'ask_chats'),where('uid','==',currentUser.uid))); CHATS=snap.docs.map(d=>({id:d.id,data:()=>d.data()})).sort((a,b)=>{ const A=(a.data().updatedAt||a.data().createdAt||0), B=(b.data().updatedAt||b.data().createdAt||0); return B-A; }).slice(0,50); }catch(e){ CHATS=[]; } if($('#v-ask')&&!$('#v-ask').classList.contains('hidden')) renderAsk(); }
+function renderAskChatsList(){ const el=$('#askChats'); if(!el) return; if(!CHATS.length){ el.innerHTML='<div class="empty" style="padding:18px">مفيش محادثات لسه.</div>'; return; } el.innerHTML=CHATS.map(c=>{ const d=(c.data?c.data():c)||{}; const on=(c.id===currentChatId)?' on':''; return '<div class="ask-item'+on+'" onclick="selectAskChat(\''+c.id+'\')"><div style="flex:1;min-width:0"><div class="t">'+esc(d.title||'محادثة')+'</div><div class="m">'+esc(d.scopeLabel||'')+' • '+ago(d.updatedAt||d.createdAt||0)+'</div></div><button class="btn btn-g" onclick="event.stopPropagation();deleteAskChat(\''+c.id+'\')">🗑️</button></div>'; }).join(''); }
+function renderAskMessages(){ const el=$('#askMsgs'); if(!el) return; if(!askMsgs.length && !askBusy){ el.innerHTML='<div class="empty">اسأل أي سؤال عن ملخصاتك ومحاضراتك، وهنجاوبك منها بس. تقدر كمان ترفق صورة سؤال.</div>'; return; } let h=askMsgs.map(m=>{ if(m.role==='user'){ return '<div class="ask-b user">'+esc(m.text||'')+(m.hasImg?' 🖼️':'')+'</div>'; } const cls=m.error?'ask-b bot err':'ask-b bot'; let srcs=''; if(m.srcs&&m.srcs.length){ srcs='<div class="ask-srcs">'+m.srcs.map(s=>'<span class="ask-src">['+s.n+'] '+esc(s.src)+'</span>').join('')+'</div>'; } return '<div class="'+cls+'">'+esc(m.text||'')+srcs+'</div>'; }).join(''); if(askBusy) h+='<div class="ask-b bot"><span class="ask-typing"><i></i><i></i><i></i></span></div>'; el.innerHTML=h; el.scrollTop=el.scrollHeight; ensureKatex().then(()=>renderMath(el)).catch(()=>{}); }
+function renderAsk(){ const sel=$('#askScopeSel'); if(sel){ sel.value=(askScope==='all'||askScope==='course')?askScope:'all'; const co=sel.querySelector('option[value=course]'); if(co) co.disabled=!currentCourse; }
+  const chip=$('#askScopeChip'); if(chip){ if(askScope.indexOf('file:')===0){ chip.classList.remove('hidden'); chip.innerHTML='<span class="ask-chip">📎 النطاق: '+esc(askFileLabel||'ملف')+' <button onclick="askResetScope()">✕</button></span>'; } else chip.classList.add('hidden'); }
+  renderAskChatsList(); renderAskMessages();
+  const inp=$('#askInput'); if(inp&&!inp.dataset.bound){ inp.dataset.bound='1'; inp.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); askSend(); } }); }
+  const fi=$('#askImgFile'); if(fi&&!fi.dataset.bound){ fi.dataset.bound='1'; fi.addEventListener('change',askOnFile); } }
+function newAskChat(){ currentChatId=null; askMsgs=[]; renderAsk(); const inp=$('#askInput'); if(inp) inp.focus(); }
+async function selectAskChat(id){ currentChatId=id; try{ const d=await getDoc(doc(db,'ask_chats',id)); askMsgs=(d.exists()&&d.data().messages)||[]; }catch(e){ askMsgs=[]; } renderAsk(); }
+async function deleteAskChat(id){ if(!await askConfirm('تحذف المحادثة دي؟')) return; try{ await deleteDoc(doc(db,'ask_chats',id)); }catch{} CHATS=CHATS.filter(c=>c.id!==id); if(currentChatId===id){ currentChatId=null; askMsgs=[]; } renderAsk(); toast('اتحذفت','ok'); }
+function setAskScope(v){ if(v==='course'&&!currentCourse){ toast('مفيش مادة مفتوحة حاليًا — افتح مادة الأول','warn'); const sel=$('#askScopeSel'); if(sel) sel.value='all'; askScope='all'; } else { askScope=v; if(v!=='all'&&v!=='course') askFileLabel=''; } renderAsk(); }
+function askResetScope(){ askScope='all'; askFileLabel=''; renderAsk(); }
+function askAboutRec(){ const rec=window._lastRec; if(!rec) return; askScope='file:'+rec.id; askFileLabel=rec.fileName||'ملف'; currentChatId=null; askMsgs=[]; go('ask'); }
+function askAttachImage(){ const fi=$('#askImgFile'); if(fi) fi.click(); }
+function askClearImage(){ if(askImageFileId){ worker('/file/'+askImageFileId,{method:'DELETE'}).catch(()=>{}); askImageFileId=null; } if(askImageUrl){ URL.revokeObjectURL(askImageUrl); askImageUrl=null; } const p=$('#askImgPrev'); if(p){ p.classList.add('hidden'); p.innerHTML=''; } }
+async function askOnFile(e){ const f=e.target.files[0]; e.target.value=''; if(!f) return; if(!f.type.startsWith('image/')) return toast('لازم صورة','err'); if(f.size>8*1024*1024) return toast('الصورة أكبر من 8 ميجا','err'); try{ toast('برفع الصورة…','warn'); const blob=await resizeImage(f,1600); const up=await worker('/file',{method:'PUT',headers:{'X-File-Name':encodeURIComponent(f.name||'image.jpg'),'Content-Type':'image/jpeg'},body:blob}); const j=await up.json(); if(!up.ok||!j.fileId) throw new Error(j.message||'فشل رفع الصورة'); askImageFileId=j.fileId; if(askImageUrl) URL.revokeObjectURL(askImageUrl); askImageUrl=URL.createObjectURL(blob); const p=$('#askImgPrev'); if(p){ p.classList.remove('hidden'); p.className='ask-imgprev'; p.innerHTML='<img src="'+askImageUrl+'"><button class="btn btn-g" onclick="askClearImage()">✕</button>'; } toast('الصورة اترفقت — اسأل سؤالك','ok'); }catch(err){ toast('فشل: '+(err.message||err),'err'); } }
+async function askSend(){ if(!currentUser) return; const inp=$('#askInput'); const q=(inp?inp.value:'').trim(); if(!q && !askImageFileId) return toast('اكتب سؤالك الأول','warn');
+  if(!currentChatId){ try{ const ref=await addDoc(collection(db,'ask_chats'),{uid:currentUser.uid,title:(q||'محادثة بصورة').slice(0,48),scopeLabel:scopeLabelNow(),messages:[],createdAt:Date.now(),updatedAt:Date.now()}); currentChatId=ref.id; }catch(e){ return toast('فشل إنشاء المحادثة: '+(e.message||e),'err'); } }
+  askMsgs.push({role:'user',text:String(q||'').slice(0,2000),hasImg:!!askImageFileId}); if(inp) inp.value=''; const pv=$('#askImgPrev'); if(pv){ pv.classList.add('hidden'); pv.innerHTML=''; }
+  askBusy=true; renderAskMessages();
+  const units=collectUnits(); const snippets=retrieveSnippets(units,q);
+  try{
+    if(!snippets.length && !askImageFileId){ askMsgs.push({role:'assistant',text:'مفيش ملفات في النطاق المحدد — وسّع النطاق أو ارفع الملف المعني.',srcs:[]}); }
+    else { const r=await worker('/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,snippets:snippets.map(s=>({src:s.src,text:s.text})),lang:'ar',imageFileId:askImageFileId||null})}); const j=await r.json(); if(!r.ok||j.error) throw new Error(j.message||('HTTP '+r.status)); askMsgs.push({role:'assistant',text:String(j.answer||'').slice(0,4000),srcs:snippets.map((s,i)=>({n:i+1,src:s.src}))}); }
+  }catch(err){ askMsgs.push({role:'assistant',text:'⚠️ '+(err.message||err),srcs:[],error:true}); }
+  finally{ if(askImageFileId){ try{ await worker('/file/'+askImageFileId,{method:'DELETE'}); }catch{} askImageFileId=null; } askBusy=false; try{ await updateDoc(doc(db,'ask_chats',currentChatId),{messages:askMsgs.slice(-40),updatedAt:Date.now()}); }catch{} renderAskMessages(); loadAskChats(); } }
+
+/* ====================== الدخول والتوجيه ====================== */
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
 window.closeAuth=()=>$('#authModal').classList.add('hidden');
 window.setAuth=m=>{ $('#tabLogin').classList.toggle('on',m==='login'); $('#tabReg').classList.toggle('on',m==='register'); $('#fName').classList.toggle('hidden',m==='login'); $('#aSubmit').textContent=m==='login'?'تسجيل الدخول':'إنشاء حساب'; $('#authForm').dataset.mode=m; };
@@ -1256,12 +1355,12 @@ function hideBoot(){ if(booted)return; booted=true; const b=$('#boot'); if(b) b.
 onAuthStateChanged(auth,u=>{
   hideBoot();
   currentUser=u;
-  if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#mainNav').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; loadFavs(); go('dash'); loadLibrary(); loadRole().then(()=>{ loadHeaderAvatar(); fillAccount(); }); loadMy(); }
+  if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#mainNav').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; loadFavs(); go('dash'); loadLibrary(); loadRole().then(()=>{ loadHeaderAvatar(); fillAccount(); }); loadMy(); loadAskChats(); }
   else { $('#gate').classList.remove('hidden'); $('#mainNav').classList.add('hidden'); $('#app').classList.add('hidden'); myPhotoUrl=''; loadHeaderAvatar(); }
 });
 setTimeout(hideBoot,5000);
 function applyView(v){
-  ['dash','upload','proc','res','quiz','lib','my','join','acct','fav','admin','dept','sem','course','lecture','students'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
+  ['dash','upload','proc','res','quiz','ask','lib','my','join','acct','fav','admin','dept','sem','course','lecture','students'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
   $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   canManage = (userRole==='admin')||(currentCollege&&myDoctorOf.includes(currentCollege.id));
   const rf=(readOnly||!canManage)?'none':'block';
@@ -1275,6 +1374,7 @@ function applyView(v){
   if(v==='my'){ const ms=$('#mySearch'); if(ms)ms.value=''; loadMy(); }
   if(v==='acct') fillAccount();
   if(v==='fav') renderFav();
+  if(v==='ask') renderAsk();
   if(v==='admin') loadColleges();
   if(v==='dept') loadDepts();
   if(v==='sem') loadSems();
@@ -1282,7 +1382,7 @@ function applyView(v){
 }
 window.go=v=>{
   if((v==='admin')&&!(userRole==='admin'||myDoctorOf.length>0)){ v='my'; }
-  if(v!=='proc'&&v!=='quiz'){ try{ history.pushState({v:v,ro:readOnly},'','#/'+v); }catch(e){} }
+  if(v!=='proc'&&v!=='quiz'&&v!=='ask'){ try{ history.pushState({v:v,ro:readOnly},'','#/'+v); }catch(e){} }
   applyView(v);
 };
 window.goBack=()=>history.back();
@@ -1416,6 +1516,7 @@ async function loadLibrary(){
 }
 window.delRec=async(id)=>{ if(!await askConfirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} const ids=m.fileIds|| (m.fileId?[m.fileId]:[]); for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
 if(matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
+
 /* ===== الجسر: دوال window → أسماء حقيقية جوه الـ script (يمنع not defined) ===== */
 const toggleTheme=window.toggleTheme, cancelTask=window.cancelTask, openTask=window.openTask, dismissTask=window.dismissTask, cfYes=window.cfYes, cfNo=window.cfNo;
 const prOk=window.prOk, prCancel=window.prCancel, toggleFav=window.toggleFav, filterLib=window.filterLib, filterHome=window.filterHome, filterMy=window.filterMy;
@@ -1434,9 +1535,10 @@ if(typeof createLecture!=='undefined')window.createLecture=createLecture;
 window.startQuizById=startQuizById; window.startCourseQuiz=startCourseQuiz; window.startQuizRec=startQuizRec;
 window.newQuiz=newQuiz; window.exitQuiz=exitQuiz; window.retryQuiz=retryQuiz;
 window.selectOpt=selectOpt; window.tfAns=tfAns; window.setEssay=setEssay; window.nextQ=nextQ; window.prevQ=prevQ; window.finishQuiz=finishQuiz;
+window.newAskChat=newAskChat; window.selectAskChat=selectAskChat; window.deleteAskChat=deleteAskChat; window.setAskScope=setAskScope; window.askResetScope=askResetScope; window.askAboutRec=askAboutRec; window.askAttachImage=askAttachImage; window.askClearImage=askClearImage; window.askSend=askSend;
 /* ===== شبكة أمان: لو أي زر مش لاقي دالته، الـ watchdog يقولك اسمها ===== */
-['toggleTheme','logout','openAuth','setAuth','closeAuth','go','goBack','summarize','runDiag','filterHome','filterLib','filterMy','joinByCode','createCollege','createDept','createSem','createCourse','createLecture','openDept','openSem','openCourse','openLecture','openLec','openRec','openStudents','changeName','changePhoto','removePhoto','changePass','deleteAccount','cfNo','cfYes','prCancel','prOk','closeEdit','saveEdit','closeDoc','appointDoctor','editItem','delItem','genCollegeCode','openDoc','myCollege','toggleFav','dlOrig','delRec','cancelTask','openTask','dismissTask','copySum','dlSum','changeType','rmPicked','toggleAcc','startQuizById','startCourseQuiz','startQuizRec','newQuiz','exitQuiz','retryQuiz','selectOpt','tfAns','setEssay','nextQ','prevQ','finishQuiz'].forEach(n=>{ if(typeof window[n]!=='function' && window.__bootErr) window.__bootErr('⚠️ الدالة '+n+' مش متاحة للأزرار — في اسم ناقص في الجسر فوق'); });
-/* ===== نهاية الكتلة ٢ — آخر سطر لازم يكون </html> ===== */
+['toggleTheme','logout','openAuth','setAuth','closeAuth','go','goBack','summarize','runDiag','filterHome','filterLib','filterMy','joinByCode','createCollege','createDept','createSem','createCourse','createLecture','openDept','openSem','openCourse','openLecture','openLec','openRec','openStudents','changeName','changePhoto','removePhoto','changePass','deleteAccount','cfNo','cfYes','prCancel','prOk','closeEdit','saveEdit','closeDoc','appointDoctor','editItem','delItem','genCollegeCode','openDoc','myCollege','toggleFav','dlOrig','delRec','cancelTask','openTask','dismissTask','copySum','dlSum','changeType','rmPicked','toggleAcc','startQuizById','startCourseQuiz','startQuizRec','newQuiz','exitQuiz','retryQuiz','selectOpt','tfAns','setEssay','nextQ','prevQ','finishQuiz','newAskChat','selectAskChat','deleteAskChat','setAskScope','askResetScope','askAboutRec','askAttachImage','askClearImage','askSend'].forEach(n=>{ if(typeof window[n]!=='function' && window.__bootErr) window.__bootErr('⚠️ الدالة '+n+' مش متاحة للأزرار — في اسم ناقص في الجسر فوق'); });
+/* ===== نهاية الملف — آخر سطر لازم يكون </html> ===== */
 </script>
 </body>
 </html>
