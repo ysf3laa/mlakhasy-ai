@@ -157,12 +157,13 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 }
 </style>
 </head>
+<body>
 <script>
 (function(){
   function show(m){
     var b=document.getElementById('boot');
     if(!b) return;
-    b.innerHTML='<div style="max-width:520px;margin:40px auto;padding:22px;border-radius:18px;background:#fff;border:2px solid #f43f5e;color:#0f172a;font-family:Tajawal,sans-serif;text-align:right;direction:rtl;box-shadow:0 8px 30px rgba(0,0,0,.12)"><b style="color:#f43f5e;font-size:18px">⛔ في خطأ في الكود — الصفحة وقفت</b><p style="margin:10px 0 0;line-height:1.9;word-break:break-word">'+String(m)+'</p><p style="margin:14px 0 0;color:#64748b;font-size:13px">غالبًا الـ paste اتقطع أو فيه حرف ناقص. الحل: افتح الملف، Select All، احذف كله، والصق النسخة الكاملة من تاني، وتأكد إن آخر سطر هو <code>&lt;/html&gt;</code> بالظبط.</p></div>';
+    b.innerHTML='<div style="max-width:520px;margin:40px auto;padding:22px;border-radius:18px;background:#fff;border:2px solid #f43f5e;color:#0f172a;font-family:Tajawal,sans-serif;text-align:right;direction:rtl;box-shadow:0 8px 30px rgba(0,0,0,.12)"><b style="color:#f43f5e;font-size:18px">⛔ في خطأ في الكود — الصفحة وقفت</b><p style="margin:10px 0 0;line-height:1.9;word-break:break-word">'+String(m)+'</p><p style="margin:14px 0 0;color:#64748b;font-size:13px">غالبًا الـ paste اتقطع أو فيه حرف ناقص. لو انت لسه بتلصق الكتلة ٢، ده طبيعي — كمّل الكتلة ١ وبعدين ٢. لو خلصت الاتنين وفضل المربع، افتح الملف وتأكد إن آخر سطر هو <code>&lt;/html&gt;</code> بالظبط.</p></div>';
   }
   window.__bootErr=show;
   window.onerror=function(msg,src,line,col){ show(msg+' (سطر '+line+(col?('، عمود '+col):'')+')'); };
@@ -170,12 +171,11 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
   setTimeout(function(){
     var app=document.getElementById('app'), gate=document.getElementById('gate');
     if(app&&app.classList.contains('hidden')&&gate&&gate.classList.contains('hidden')){
-      show('الـ JavaScript ما اشتغلش خالص (مفيش خطأ واضح = الأغلب إن الملف اتقطع أثناء النسخ واللصق، أو الـ CDN بتاع Firebase ماوصلش). جرّب تقفل VPN وتفتح على Wi-Fi، ولو فضل فاضي فالملف نفسه ناقص.');
+      show('الـ JavaScript ما اشتغلش خالص. لو انت لسه مكمّلتش الكتلة ٢ → ده طبيعي، كمّل. لو خلصت الاتنين → الملف اتقطع أثناء النسخ، أعد اللصق وتأكد إن آخر سطر </html>.');
     }
-  },8000);
+  },9000);
 })();
 </script>
-<body>
 <div class="toast" id="toast"></div>
 <div class="tasks" id="tasks"></div>
 <nav class="hidden" id="mainNav"><div class="wrap nav-in">
@@ -995,7 +995,7 @@ window.changeType=async(t)=>{
     toast('فشل تغيير النوع: '+tt.msg,'err');
   }
 };
-
+/* ====== نهاية الكتلة ١ — لا تفتح الموقع الآن، احفظ (Commit) وقولي "كمّل" ====== */
 window.loadRole=loadRole; window.ensureUserDoc=ensureUserDoc; window.createCollege=createCollege; window.genCollegeCode=genCollegeCode; window.loadColleges=loadColleges;
 window.createDept=createDept; window.loadDepts=loadDepts; window.createSem=createSem; window.loadSems=loadSems;
 window.createCourse=createCourse; window.loadCourses=loadCourses; window.createLecture=createLecture; window.loadLectures=loadLectures;
@@ -1189,7 +1189,7 @@ function renderResult(rec){
 }
 window.copySum=async()=>{ const t=mdText(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ Markdown','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
 window.dlSum=()=>{ const h=buildExportHTML(window._lastRec); const b=new Blob([h],{type:'text/html;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(window._lastRec.fileName.replace(/\.[^.]+$/,''))+'-ملخص.html'; a.click(); toast('اتحمّل ملف منظم (HTML)','ok'); };
-window.dlOrig=async(docId)=>{ const m=META[docId]; const fid=m&&m.fileId; if(!fid) return toast('الملف الأصلي مش متاح (أو مجموعة — حمّل من المكتبتي)', 'err'); try{ const r=await worker('/file/'+fid,{method:'GET'}); if(!r.ok) throw new Error('الملف مش متاح'); const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الأصلي','ok'); }catch(e){ toast(e.message,'err'); } };
+window.dlOrig=async(docId)=>{ const m=META[docId]; const fid=m&&m.fileId; if(!fid) return toast('الملف الأصلي مش متاح (أو مجموعة)', 'err'); try{ const r=await worker('/file/'+fid,{method:'GET'}); if(!r.ok) throw new Error('الملف مش متاح'); const blob=await r.blob(); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=m.fileName||'file'; a.click(); toast('اتحمّل الأصلي','ok'); }catch(e){ toast(e.message,'err'); } };
 function plain(r){ const s=r.summary||{}; let o='ملخص: '+r.fileName+'\n\n'; if(s.tldr&&s.tldr.length){o+='أهم 3 نقاط:\n'+s.tldr.map(t=>'- '+t).join('\n')+'\n\n';} o+=(s.overview||'')+'\n\n'; (s.sections||[]).forEach(x=>{ o+='## '+x.heading+'\n'+(x.points||[]).map(p=>'- '+p).join('\n')+'\n\n'; }); (s.terms||[]).forEach(t=>o+='- '+t.term+': '+t.definition+'\n'); o+='\nأسئلة:\n'+(s.questions||[]).map((q,i)=>(i+1)+'. '+q).join('\n'); return o; }
 async function loadStats(){
   const snap=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid)));
@@ -1220,6 +1220,6 @@ async function loadLibrary(){
 window.delRec=async(id)=>{ if(!await askConfirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} const ids=m.fileIds|| (m.fileId?[m.fileId]:[]); for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
 if(matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
 </script>
-
 </body>
 </html>
+/* ====== نهاية الملف — آخر سطر لازم يكون </html> ====== */
