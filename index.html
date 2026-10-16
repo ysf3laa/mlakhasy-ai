@@ -105,6 +105,10 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 .flip-f,.flip-b{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.7}
 .flip-f{background:var(--soft);color:var(--primary);font-weight:800;font-size:16px}
 .flip-b{background:var(--surface);transform:rotateY(180deg)}
+.math{display:inline-block;direction:ltr;unicode-bidi:isolate;vertical-align:middle}
+.math-d{display:block;text-align:center;margin:10px 0;overflow-x:auto;overflow-y:hidden}
+.katex{font-size:1.08em}
+.katex-error{color:var(--err)!important;font-family:monospace;font-size:.92em}
 .hint{text-align:center;color:var(--muted);font-size:13px;margin-top:12px}
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
 .grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
@@ -371,7 +375,21 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
-const esc = s => String(s??"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function esc(s){
+  s=String(s??'');
+  const raw=c=>c.replace(/[&<>"']/g,x=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
+  const re=/\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\$([^$\n]+?)\$|\\\(([\s\S]+?)\\\)/g;
+  let out='',last=0,m;
+  while((m=re.exec(s))){
+    out+=raw(s.slice(last,m.index));
+    const tex=m[1]||m[2]||m[3]||m[4];
+    const disp=!!(m[1]||m[2]);
+    out+='<span class="math'+(disp?' math-d':'')+'" data-tex="'+raw(tex)+'" data-disp="'+(disp?1:0)+'"></span>';
+    last=re.lastIndex;
+  }
+  out+=raw(s.slice(last));
+  return out;
+}
 const fmt = b => b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB';
 const ts = d => d?.createdAt?.seconds || 0;
 const ageDays = d => (Date.now()/1000 - ts(d)) / 86400;
@@ -394,7 +412,7 @@ function renderTasks(){
   const list=Object.values(TASKS);
   el.innerHTML=list.map(t=>{
     const cls=t.status==='done'?'done':t.status==='error'?'err':'';
-    const ic=t.status==='done'?'✅':t.status==='error'?'⚠️':'⏳';
+    const ic=t.status==='done'?'✅':t.status==='error'?'⚠️':'';
     let acts='';
     if(t.status==='active') acts='<button class="btn btn-s" onclick="cancelTask(\''+t.id+'\')">إلغاء</button>';
     else if(t.status==='done') acts='<button class="btn btn-p" onclick="openTask(\''+t.id+'\')">فتح الملخص</button><button class="btn btn-g" onclick="dismissTask(\''+t.id+'\')">✕</button>';
@@ -552,6 +570,27 @@ window.removePhoto=async()=>{
   await setDoc(doc(db,'users',currentUser.uid),{photoUrl:''},{merge:true});
   myPhotoUrl=''; toast('الصورة اتمسحت','ok'); fillAccount(); loadHeaderAvatar();
 };
+
+let _katexPromise=null;
+function ensureKatex(){
+  if(_katexPromise) return _katexPromise;
+  if(window.katex) return _katexPromise=Promise.resolve();
+  _katexPromise=new Promise((res,rej)=>{
+    const css=document.createElement('link'); css.rel='stylesheet'; css.href='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css'; document.head.appendChild(css);
+    const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js'; s.onload=()=>res(); s.onerror=()=>rej(new Error('katex load')); document.head.appendChild(s);
+  });
+  return _katexPromise;
+}
+function renderMath(root){
+  if(!window.katex||!root) return;
+  root.querySelectorAll('.math').forEach(el=>{
+    if(el.dataset.done) return; el.dataset.done='1';
+    let tex=el.dataset.tex||''; tex=tex.replace(/\\\\/g,'\\');
+    const disp=el.dataset.disp==='1';
+    try{ katex.render(tex,el,{throwOnError:false,displayMode:disp,output:'html'}); }
+    catch(e){ el.textContent=tex; }
+  });
+}
 
 function fillAccount(){
   if(!currentUser) return;
@@ -791,6 +830,7 @@ window.fillAccount=fillAccount; window.changeName=changeName; window.changePass=
 window.loadFavs=loadFavs; window.toggleFav=toggleFav; window.renderFav=renderFav; window.filterLib=filterLib; window.favStar=favStar;
 window.askConfirm=askConfirm; window.askPrompt=askPrompt; window.cfYes=cfYes; window.cfNo=cfNo; window.prOk=prOk; window.prCancel=prCancel; window.filterHome=filterHome; window.filterMy=filterMy;
 window.changePhoto=changePhoto; window.removePhoto=removePhoto; window.resizeImage=resizeImage; window.loadHeaderAvatar=loadHeaderAvatar;
+window.ensureKatex=ensureKatex; window.renderMath=renderMath;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
@@ -915,6 +955,7 @@ function renderResult(rec){
   $('#resBody').innerHTML=html;
   $$('#resBody .rtab').forEach(b=>b.addEventListener('click',()=>{ $$('#resBody .rtab').forEach(x=>x.classList.remove('on')); $$('#resBody .rpanel').forEach(x=>x.classList.remove('on')); b.classList.add('on'); const p=$('#rp-'+b.dataset.rt); if(p)p.classList.add('on'); }));
   window._lastRec=rec;
+  ensureKatex().then(()=>renderMath($('#resBody'))).catch(()=>{});
 }
 window.copySum=async()=>{ const t=plain(window._lastRec); try{ await navigator.clipboard.writeText(t); toast('اتنسخ','ok'); }catch{ toast('مقدرناش ننسخ','err'); } };
 window.dlSum=()=>{ const t=plain(window._lastRec); const b=new Blob([t],{type:'text/plain;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=(window._lastRec.fileName.replace(/\.[^.]+$/,''))+'-ملخص.txt'; a.click(); toast('اتحمّل','ok'); };
