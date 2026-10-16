@@ -615,18 +615,19 @@ async function extractTextLocal(file){
 window.runDiag=async()=>{
   const box=$('#diagOut'); if(!box) return;
   box.classList.remove('hidden');
-  box.innerHTML='<div class="empty">بفحص مفاتيحك عند جوجل… استنى ١٠ ثواني</div>';
+  box.innerHTML='<div class="empty">بستعلم الموديلات المتاحة من جوجل لكل مفتاح… استنى ١٥ ثواني</div>';
   try{
     const r=await worker('/diag',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});
     const j=await r.json();
     if(!r.ok||!j.result){box.innerHTML='<div class="empty">خطأ في الفحص: '+esc(j.message||('HTTP '+r.status))+'</div>';return;}
     let h='<div class="card" style="margin-top:12px"><div class="head"><h1 style="font-size:17px">نتيجة فحص مفاتيح Gemini — عددهم: '+j.keys+'</h1></div>';
     j.result.forEach((row,i)=>{
-      h+='<div style="margin-bottom:12px;border-bottom:1px solid var(--border);padding-bottom:10px"><b>مفتاح '+(i+1)+' </b><span class="pill">'+esc(row.key||'')+'</span>';
-      Object.keys(row).forEach(k=>{ if(k==='key')return; const v=String(row[k]); const good=v.indexOf('200')===0; h+='<div style="font-size:12px;margin:4px 0"><bdi>'+esc(k)+'</bdi>: <span style="color:'+(good?'var(--ok)':'var(--err)')+'"><bdi>'+esc(v)+'</bdi></span></div>'; });
+      h+='<div style="margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:10px"><b>مفتاح '+(i+1)+' </b><span class="pill">'+esc(row.key||'')+'</span>';
+      if(row.available){ h+='<div style="font-size:12px;margin:6px 0;color:var(--muted)">📋 الموديلات المتاحة: <bdi>'+esc(row.available)+'</bdi></div>'; }
+      Object.keys(row).forEach(k=>{ if(k==='key'||k==='available')return; const v=String(row[k]); const good=v.indexOf('200')===0; h+='<div style="font-size:12px;margin:4px 0"><bdi>'+esc(k)+'</bdi>: <span style="color:'+(good?'var(--ok)':'var(--err)')+'"><bdi>'+esc(v)+'</bdi></span></div>'; });
       h+='</div>';
     });
-    h+='<p style="color:var(--muted);font-size:12px;margin:6px 0 0">كل سطر أحمر يبدأ بـ <b>429</b> = جوجل بيقول للمفتاح "خلصت حصتك" (مش غلط كود). أي سطر أخضر يبدأ بـ <b>200</b> = المفتاح شغال، والغلط في معالجتي للصور.</p></div>';
+    h+='<p style="color:var(--muted);font-size:12px;margin:6px 0 0">لو "الموديلات المتاحة" فاضية أو بتقول فعّل الـ API، يبقى المشكلة في إعداد الحساب عند جوجل (مش في الكود). لو فيها أسماء، التلخيص هيستخدمها تلقائيًا.</p></div>';
     box.innerHTML=h;
   }catch(e){box.innerHTML='<div class="empty">فشل الاتصال: '+esc(e.message||e)+'</div>';}
 };
@@ -943,7 +944,7 @@ window.fillAccount=fillAccount; window.changeName=changeName; window.changePass=
 window.loadFavs=loadFavs; window.toggleFav=toggleFav; window.renderFav=renderFav; window.filterLib=filterLib; window.favStar=favStar;
 window.askConfirm=askConfirm; window.askPrompt=askPrompt; window.cfYes=cfYes; window.cfNo=cfNo; window.prOk=prOk; window.prCancel=prCancel; window.filterHome=filterHome; window.filterMy=filterMy;
 window.changePhoto=changePhoto; window.removePhoto=removePhoto; window.resizeImage=resizeImage; window.loadHeaderAvatar=loadHeaderAvatar;
-window.ensureKatex=ensureKatex; window.renderMath=renderMath; window.extractTextLocal=extractTextLocal;
+window.ensureKatex=ensureKatex; window.renderMath=renderMath; window.extractTextLocal=extractTextLocal; window.runDiag=runDiag;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
