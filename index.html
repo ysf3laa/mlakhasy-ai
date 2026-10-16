@@ -33,7 +33,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 .btn-g:hover{background:var(--surface2);color:var(--text)}
 .btn:disabled{opacity:.55;cursor:not-allowed;transform:none!important}
 .btn-lg{padding:14px 26px;font-size:17px}
-#gate{min-height:calc(100vh - 0px);display:grid;place-items:center;padding:20px;background:radial-gradient(circle at top,rgba(79,70,229,.12),transparent 45%)}
+#gate{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(circle at top,rgba(79,70,229,.12),transparent 45%)}
 .gate-card{position:relative;width:min(420px,100%);background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:34px 28px;box-shadow:var(--shadow);text-align:center}
 .gate-card p{color:var(--muted);margin:6px 0 22px}
 .field{margin-bottom:14px}
@@ -178,6 +178,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <button class="nav-i" data-v="upload" onclick="go('upload')">⬆️<span>رفع</span></button>
 <button class="nav-i" data-v="lib" onclick="go('lib')">📚<span>مكتبتي</span></button>
 <button class="nav-i" data-v="my" onclick="go('my')">🎓<span>موادي</span></button>
+<button class="nav-i" data-v="fav" onclick="go('fav')">⭐<span>مفضلة</span></button>
 <button class="nav-i" data-v="acct" onclick="go('acct')">👤<span>حسابي</span></button>
 <button class="nav-i hidden" data-v="admin" id="navAdmin" onclick="go('admin')">🏛️<span>إدارة</span></button>
 <div class="side-foot"><span class="pill" id="sideEmail"></span></div>
@@ -220,6 +221,7 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <section id="v-res" class="hidden"><div id="resBody"></div></section>
 <section id="v-lib" class="hidden">
 <div class="head"><div><h1>مكتبتي</h1><p>كل ملخصاتك وملفاتك في مكان واحد</p></div><button class="btn btn-p" onclick="go('upload')">⬆️ رفع</button></div>
+<div class="field" style="margin-bottom:14px"><input class="inp" id="libSearch" placeholder="🔍 ابحث في ملخصاتك بالاسم…" oninput="filterLib()"></div>
 <div id="libList"></div>
 </section>
 <section id="v-my" class="hidden">
@@ -233,6 +235,10 @@ nav{position:sticky;top:0;z-index:50;background:var(--surface);border-bottom:1px
 <button class="btn btn-p" style="width:100%" onclick="joinByCode()">انضم للكلية</button>
 <p style="color:var(--muted);font-size:13px;margin-top:12px">الكود بيديك access لكل أقسام الكلية وفصولها وموادها ومحاضراتها.</p>
 </div>
+</section>
+<section id="v-fav" class="hidden">
+<div class="head"><div><h1>المفضلة</h1><p>الحاجات اللي علّمت عليها بنجمة</p></div><button class="btn btn-s" onclick="go('dash')">→ رجوع</button></div>
+<div id="favList"></div>
 </section>
 <section id="v-acct" class="hidden">
 <div class="head"><div><h1>حسابي</h1><p>بياناتك وإعداداتك</p></div><button class="btn btn-s" onclick="go('dash')">→ رجوع</button></div>
@@ -362,6 +368,7 @@ let userRole='student', backTo='course', readOnly=false, canLec=false, canManage
 let myDoctorOf=[], myMemberOf=[];
 let currentCollege=null, currentDept=null, currentSem=null, currentCourse=null;
 let COLLEGES=[], DEPTS=[], SEMS=[], COURSES=[], LECTURES=[], MY=[];
+let FAVS=new Set(), FAV_TITLES={}, FAV_REG={}, LIB_DOCS=[];
 let editType=null, editId=null, editFileId=null;
 const TASKS={}; let taskSeq=0;
 
@@ -370,7 +377,7 @@ function renderTasks(){
   const list=Object.values(TASKS);
   el.innerHTML=list.map(t=>{
     const cls=t.status==='done'?'done':t.status==='error'?'err':'';
-    const ic=t.status==='done'?'✅':t.status==='error'?'⚠️':'⏳';
+    const ic=t.status==='done'?'✅':t.status==='error'?'⚠️':'';
     let acts='';
     if(t.status==='active') acts='<button class="btn btn-s" onclick="cancelTask(\''+t.id+'\')">إلغاء</button>';
     else if(t.status==='done') acts='<button class="btn btn-p" onclick="openTask(\''+t.id+'\')">فتح الملخص</button><button class="btn btn-g" onclick="dismissTask(\''+t.id+'\')">✕</button>';
@@ -412,6 +419,66 @@ function actions(type,id,fileId,cid){
   const ff = fileId ? ",\'"+fileId+"\'" : "";
   return '<button class="btn btn-g" onclick="editItem(\''+type+'\',\''+id+'\')">✏️</button><button class="btn btn-g" onclick="delItem(\''+type+'\',\''+id+'\''+ff+')">🗑️</button>';
 }
+async function loadFavs(){
+  if(!currentUser) return;
+  try{
+    const snap=await getDocs(query(collection(db,'favorites'),where('uid','==',currentUser.uid)));
+    FAVS=new Set(); FAV_TITLES={};
+    snap.docs.forEach(d=>{ const x=d.data(); const k=x.type+'_'+x.refId; FAVS.add(k); FAV_TITLES[k]={title:x.title||'',type:x.type,refId:x.refId}; });
+  }catch(e){}
+}
+function favKey(t,r){ return t+'_'+r; }
+function favStar(type,refId,title){
+  const k=favKey(type,refId);
+  if(title!==undefined) FAV_REG[k]=title;
+  const on=FAVS.has(k);
+  return '<button class="btn btn-g" onclick="toggleFav(\''+type+'\',\''+refId+'\')">'+(on?'★':'☆')+'</button>';
+}
+window.toggleFav=async(type,refId)=>{
+  if(!currentUser) return;
+  const id=currentUser.uid+'_'+type+'_'+refId; const k=favKey(type,refId); const title=FAV_REG[k]||'';
+  try{
+    if(FAVS.has(k)){ await deleteDoc(doc(db,'favorites',id)); FAVS.delete(k); delete FAV_TITLES[k]; toast('اتشال من المفضلة','ok'); }
+    else { await setDoc(doc(db,'favorites',id),{uid:currentUser.uid,type,refId,title,addedAt:serverTimestamp()}); FAVS.add(k); FAV_TITLES[k]={title,type,refId}; toast('اتضاف للمفضلة ⭐','ok'); }
+    refreshFavViews();
+  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+};
+function refreshFavViews(){
+  if($('#v-fav')&&!$('#v-fav').classList.contains('hidden')) renderFav();
+  if($('#v-lib')&&!$('#v-lib').classList.contains('hidden')) filterLib();
+  if($('#v-lecture')&&!$('#v-lecture').classList.contains('hidden')) loadLectures();
+  if($('#v-course')&&!$('#v-course').classList.contains('hidden')) loadCourses();
+}
+function renderFav(){
+  const el=$('#favList'); if(!el) return;
+  const groups={summary:'📄 ملخصات',lecture:'🎬 محاضرات',course:'📘 مواد'};
+  const items=[...FAVS].map(k=>FAV_TITLES[k]).filter(Boolean);
+  if(!items.length){ el.innerHTML='<div class="empty">مفيش مفضلة لسه. دوس ☆ على أي حاجة عشان تضيفها هنا.</div>'; return; }
+  let html='';
+  Object.keys(groups).forEach(t=>{
+    const g=items.filter(x=>x.type===t);
+    if(!g.length) return;
+    html+='<div class="head" style="margin:14px 0 8px"><h1 style="font-size:18px">'+groups[t]+'</h1></div>';
+    html+=g.map(x=>{
+      let open='';
+      if(t==='summary') open='openRec(\''+x.refId+'\')';
+      else if(t==='lecture') open='openLec(\''+x.refId+'\')';
+      else if(t==='course') open='openLecture(\''+x.refId+'\',\'fav\')';
+      return '<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.title||'—')+'</b></div><div style="display:flex;gap:7px"><button class="btn btn-s" onclick="'+open+'">فتح</button>'+favStar(t,x.refId,x.title)+'</div></div>';
+    }).join('');
+  });
+  el.innerHTML=html;
+}
+window.filterLib=()=>{
+  const q=($('#libSearch')?$('#libSearch').value:'').trim().toLowerCase();
+  const el=$('#libList'); if(!el) return;
+  const list=q?LIB_DOCS.filter(d=>((d.data().fileName)||'').toLowerCase().includes(q)):LIB_DOCS;
+  el.innerHTML=list.length?list.map(d=>libRow(d)).join(''):'<div class="empty">'+(q?'مفيش نتائج للكلمة دي.':'مكتبتك فاضية. ارفع أول ملف 📤')+'</div>';
+};
+function libRow(d){
+  const x=d.data(); const canDl=x.fileId&&!x.fileDeleted;
+  return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+' • <bdi>'+(x.summary?.wordCount||0)+'</bdi> كلمة'+(x.fileDeleted?' • <span style="color:var(--warn)">الأصلي اتحذف</span>':'')+'</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button>'+favStar('summary',d.id,x.fileName)+(canDl?'<button class="btn btn-g" onclick="dlOrig(\''+d.id+'\')">📎</button>':'')+'<button class="btn btn-g" onclick="delRec(\''+d.id+'\')">🗑️</button></div></div>';
+}
 function fillAccount(){
   if(!currentUser) return;
   $('#acName').value = currentUser.displayName || '';
@@ -449,6 +516,7 @@ window.deleteAccount=async()=>{
   try{ const s=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid))); for(const d of s.docs){ const x=d.data(); if(x.fileId){ try{ await worker('/file/'+x.fileId,{method:'DELETE'}); }catch{} } try{ await deleteDoc(doc(db,'summaries',d.id)); }catch{} } }catch{}
   try{ await deleteDoc(doc(db,'org_roles',currentUser.uid)); }catch{}
   try{ const m=await getDocs(query(collection(db,'members'),where('uid','==',currentUser.uid))); for(const d of m.docs){ try{ await deleteDoc(doc(db,'members',d.id)); }catch{} } }catch{}
+  try{ const f=await getDocs(query(collection(db,'favorites'),where('uid','==',currentUser.uid))); for(const d of f.docs){ try{ await deleteDoc(doc(db,'favorites',d.id)); }catch{} } }catch{}
   try{ await deleteUser(currentUser); toast('الحساب اتمسح 🗑️','ok'); }
   catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 };
@@ -559,10 +627,11 @@ async function loadCourses(){
   const el=$('#courseList'); if(!el||!currentSem) return;
   const snap=await getDocs(query(collection(db,'courses'),where('semesterId','==',currentSem.id)));
   COURSES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.code)+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button>'+actions('course',x.id)+'</div></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
+  el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">كود: '+esc(x.code)+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button>'+favStar('course',x.id,x.name)+actions('course',x.id)+'</div></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
 }
 window.openLecture=async(id,from)=>{
-  const c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id);
+  let c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id);
+  if(!c){ try{ const d=await getDoc(doc(db,'courses',id)); if(d.exists()) c={id:d.id,...d.data()}; }catch{} }
   if(!c)return;
   currentCourse={id:c.id,name:c.name,code:c.code};
   backTo=from||'course';
@@ -595,9 +664,9 @@ async function loadLectures(){
   const el=$('#lecList'); if(!el||!currentCourse) return;
   const snap=await getDocs(query(collection(db,'lectures'),where('courseId','==',currentCourse.id)));
   LECTURES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح</button>'+actions('lecture',x.id,x.fileId)+'</div></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
+  el.innerHTML=LECTURES.length?LECTURES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small style="color:var(--muted)">'+esc(x.provider||'')+' • '+((x.summary?.wordCount||0))+' كلمة</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLec(\''+x.id+'\')">فتح</button>'+favStar('lecture',x.id,x.name)+actions('lecture',x.id,x.fileId)+'</div></div>').join(''):'<div class="empty">مفيش محاضرات لسه. ارفع واحدة فوق ☝️</div>';
 }
-window.openLec=(id)=>{ const x=LECTURES.find(a=>a.id===id); if(!x)return; META[id]={fileId:null,fileName:x.name,fileDeleted:true}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,fileSize:0,fileId:null,fileDeleted:true}); go('res'); };
+window.openLec=async(id)=>{ let x=LECTURES.find(a=>a.id===id); if(!x){ try{ const d=await getDoc(doc(db,'lectures',id)); if(d.exists()) x={id:d.id,...d.data()}; }catch{} } if(!x)return; META[id]={fileId:null,fileName:x.name,fileDeleted:true}; renderResult({id,fileName:x.name,summary:x.summary,provider:x.provider,fileSize:0,fileId:null,fileDeleted:true}); go('res'); };
 window.openStudents=async()=>{
   if(!currentCollege) return;
   $('#stuTitle').textContent='طلاب '+currentCollege.name;
@@ -642,6 +711,7 @@ window.createCourse=createCourse; window.loadCourses=loadCourses; window.createL
 window.joinByCode=joinByCode; window.loadMy=loadMy; window.actions=actions; window.editItem=editItem; window.closeEdit=closeEdit; window.saveEdit=saveEdit; window.delItem=delItem;
 window.openDoc=openDoc; window.closeDoc=closeDoc; window.appointDoctor=appointDoctor; window.openStudents=openStudents;
 window.fillAccount=fillAccount; window.changeName=changeName; window.changePass=changePass; window.deleteAccount=deleteAccount;
+window.loadFavs=loadFavs; window.toggleFav=toggleFav; window.renderFav=renderFav; window.filterLib=filterLib; window.favStar=favStar;
 window.renderTasks=renderTasks; window.cancelTask=cancelTask; window.openTask=openTask; window.dismissTask=dismissTask;
 
 window.openAuth=m=>{ $('#authModal').classList.remove('hidden'); setAuth(m); };
@@ -659,12 +729,12 @@ function hideBoot(){ if(booted)return; booted=true; const b=$('#boot'); if(b) b.
 onAuthStateChanged(auth,u=>{
   hideBoot();
   currentUser=u;
-  if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#mainNav').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; go('dash'); loadLibrary(); loadRole(); loadMy(); }
+  if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#mainNav').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; loadFavs(); go('dash'); loadLibrary(); loadRole(); loadMy(); }
   else { $('#gate').classList.remove('hidden'); $('#mainNav').classList.add('hidden'); $('#app').classList.add('hidden'); }
 });
 setTimeout(hideBoot,5000);
 function applyView(v){
-  ['dash','upload','proc','res','lib','my','join','acct','admin','dept','sem','course','lecture','students'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
+  ['dash','upload','proc','res','lib','my','join','acct','fav','admin','dept','sem','course','lecture','students'].forEach(x=>$('#v-'+x).classList.toggle('hidden',x!==v));
   $$('.nav-i').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
   canManage = (userRole==='admin')||(currentCollege&&myDoctorOf.includes(currentCollege.id));
   const rf=(readOnly||!canManage)?'none':'block';
@@ -677,6 +747,7 @@ function applyView(v){
   if(v==='dash') loadStats();
   if(v==='my') loadMy();
   if(v==='acct') fillAccount();
+  if(v==='fav') renderFav();
   if(v==='admin') loadColleges();
   if(v==='dept') loadDepts();
   if(v==='sem') loadSems();
@@ -717,7 +788,7 @@ lfile.addEventListener('change',e=>pickLec(e.target.files[0]));
 function pickLec(f){
   if(!f) return;
   if(f.size>MAX_MB*1024*1024) return toast('الملف أكبر من '+MAX_MB+' ميجابايت','err');
-  const ok=f.type==='application/pdf'||f.type==='text/plain'||f.type.startsWith('image/')||/\.(pdf|txt|png|jpe:g|webp)$/i.test(f.name);
+  const ok=f.type==='application/pdf'||f.type==='text/plain'||f.type.startsWith('image/')||/\.(pdf|txt|png|jpe?g|webp)$/i.test(f.name);
   if(!ok) return toast('نوع الملف غير مدعوم','err');
   lecFile=f; if(lecURL)URL.revokeObjectURL(lecURL); lecURL=f.type.startsWith('image/')?URL.createObjectURL(f):null;
   $('#lpicked').innerHTML='<div class="chip">'+(lecURL?'<img src="'+lecURL+'" style="width:40px;height:40px;object-fit:cover;border-radius:10px">':'📄')+' <div><b>'+esc(f.name)+'</b><br><small style="color:var(--muted)">'+fmt(f.size)+'</small></div></div>';
@@ -791,7 +862,8 @@ async function loadLibrary(){
   const docs=snap.docs.sort((a,b)=>ts(b)-ts(a));
   docs.forEach(d=>{ const x=d.data(); META[d.id]={fileId:x.fileId,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; });
   await lazyCleanup(docs);
-  $('#libList').innerHTML=docs.length?docs.map(d=>{ const x=d.data(); const canDl=x.fileId&&!x.fileDeleted; return '<div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><b>'+esc(x.fileName)+'</b><br><small style="color:var(--muted)">'+fmt(x.fileSize||0)+' • '+esc(x.provider||'')+' • <bdi>'+(x.summary?.wordCount||0)+'</bdi> كلمة'+(x.fileDeleted?' • <span style="color:var(--warn)">الأصلي اتحذف</span>':'')+'</small></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-s" onclick="openRec(\''+d.id+'\')">فتح</button>'+(canDl?'<button class="btn btn-g" onclick="dlOrig(\''+d.id+'\')">📎</button>':'')+'<button class="btn btn-g" onclick="delRec(\''+d.id+'\')">🗑️</button></div></div>'; }).join(''):'<div class="empty">مكتبتك فاضية. ارفع أول ملف 📤</div>';
+  LIB_DOCS=docs;
+  filterLib();
 }
 window.delRec=async(id)=>{ if(!confirm('تحذف الملخص ده؟')) return; const m=META[id]||{}; try{ await deleteDoc(doc(db,'summaries',id)); }catch{} if(m.fileId){ try{ await worker('/file/'+m.fileId,{method:'DELETE'}); }catch{} } delete META[id]; toast('اتحذف','ok'); loadLibrary(); loadStats(); };
 if(matchMedia('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme','dark');
