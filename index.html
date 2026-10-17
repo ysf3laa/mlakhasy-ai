@@ -230,6 +230,31 @@ bdi{unicode-bidi:isolate}
 .qz-best{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:800;background:rgba(16,185,129,.12);color:#047857;border:1px solid rgba(16,185,129,.3)}
 [data-theme=dark] .qz-best{color:#34d399}
 .qz-loading{text-align:center;padding:40px;color:var(--muted)}
+.qz-timer{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:999px;font-weight:800;font-size:13px;background:rgba(245,158,11,.12);color:#b45309;border:1px solid rgba(245,158,11,.3)}
+[data-theme=dark] .qz-timer{color:#fbbf24}
+.qz-timer.danger{background:rgba(244,63,94,.12);color:#be123c;border-color:rgba(244,63,94,.35);animation:pulse 1s infinite}
+[data-theme=dark] .qz-timer.danger{color:#fb7185}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.exam-list{display:grid;gap:10px}
+.exam-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:14px;box-shadow:var(--shadow);display:grid;gap:10px}
+.exam-top{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.exam-title{font-weight:800;font-size:16px;min-width:0}
+.exam-sub{color:var(--muted);font-size:12px;margin-top:3px}
+.exam-status{display:inline-flex;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+.exam-status.live{background:rgba(16,185,129,.12);color:#047857;border-color:rgba(16,185,129,.3)}
+[data-theme=dark] .exam-status.live{color:#34d399}
+.exam-status.upcoming{background:rgba(79,70,229,.12);color:var(--primary);border-color:rgba(79,70,229,.25)}
+.exam-status.past{background:rgba(244,63,94,.1);color:#be123c;border-color:rgba(244,63,94,.25)}
+.exam-status.done{background:rgba(16,185,129,.12);color:#047857;border-color:rgba(16,185,129,.3)}
+.exam-actions{display:flex;gap:8px;flex-wrap:wrap}
+.dash-exam{background:linear-gradient(135deg,rgba(245,158,11,.16),rgba(244,63,94,.1));border:1px solid rgba(245,158,11,.28);border-radius:20px;padding:16px;margin:12px 0;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.dash-exam b{display:block;font-size:16px}
+.dash-exam small{color:var(--muted)}
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:16px}
+.grade-table{width:100%;min-width:520px;border-collapse:collapse;font-size:13px}
+.grade-table th,.grade-table td{padding:10px 8px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap}
+.grade-table th{background:var(--surface2);color:var(--muted)}
+.grade-table tr:last-child td{border-bottom:none}
 .ask-layout{display:grid;grid-template-columns:1fr;gap:12px}
 .ask-side{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:10px;max-height:180px;overflow:auto;display:grid;gap:6px;align-content:start;order:2}
 .ask-item{display:flex;align-items:center;gap:8px;padding:10px;border-radius:12px;border:1px solid transparent;background:var(--surface2);cursor:pointer;text-align:start;width:100%;color:var(--text)}
@@ -371,6 +396,8 @@ bdi{unicode-bidi:isolate}
     <div class="empty">مفيش مواد حديثة. افتح مادة من «موادي» وهتظهر هنا.</div>
   </div>
 
+  <div id="dashExamBanner" class="hidden"></div>
+
   <div class="head-row">
     <h2>📢 إعلانات</h2>
     <button class="btn btn-g" onclick="go('ann')">الكل ←</button>
@@ -421,7 +448,7 @@ bdi{unicode-bidi:isolate}
 <section id="v-res" class="hidden"><div id="resBody"></div></section>
 
 <section id="v-quiz" class="hidden">
-  <div class="head"><div><button class="btn btn-g" onclick="exitQuiz()" style="margin-bottom:8px">→ خروج</button><h1 id="qzTitle">امتحان</h1><p id="qzSub"></p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="qz-best hidden" id="qzBest"></span><button class="btn btn-s" onclick="newQuiz()">🔄 امتحان جديد</button></div></div>
+  <div class="head"><div><button class="btn btn-g" onclick="exitQuiz()" style="margin-bottom:8px">→ خروج</button><h1 id="qzTitle">امتحان</h1><p id="qzSub"></p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><span class="qz-best hidden" id="qzBest"></span><span class="qz-timer hidden" id="qzTimer"></span><button class="btn btn-s" id="newQuizBtn" onclick="newQuiz()">🔄 امتحان جديد</button></div></div>
   <div class="qz-wrap"><div class="qz-prog"><i id="qzBar"></i></div><div id="qzBody"></div></div>
 </section>
 
@@ -444,6 +471,11 @@ bdi{unicode-bidi:isolate}
       </div>
     </div>
   </div>
+</section>
+
+<section id="v-exams" class="hidden">
+  <div class="head"><div><h1>🧪 امتحاناتي</h1><p>الامتحانات اللي الدكتور نشرها لك. لما تخلص هتشوف درجتك فورًا.</p></div><button class="btn btn-s" onclick="go('dash')">→ رجوع</button></div>
+  <div id="myExamsList" class="exam-list"><div class="empty">مفيش امتحانات حاليًا.</div></div>
 </section>
 
 <section id="v-lib" class="hidden">
@@ -562,6 +594,12 @@ bdi{unicode-bidi:isolate}
   </div>
   <div class="head"><h1 style="font-size:18px">🎬 المحاضرات</h1></div>
   <div id="lecList"></div>
+
+  <div class="head-row">
+    <h2>🧪 امتحانات المادة</h2>
+    <button class="btn btn-g hidden" id="addExamBtn" onclick="openExamCompose()">➕ امتحان جديد</button>
+  </div>
+  <div id="lecExamList" class="exam-list"><div class="empty">مفيش امتحانات للمادة دي.</div></div>
 </section>
 
 <section id="v-students" class="hidden">
@@ -586,6 +624,7 @@ bdi{unicode-bidi:isolate}
     <div class="more-list">
       <button class="more-item" onclick="go('upload');closeMore()">⬆️ <span>رفع ملف</span></button>
       <button class="more-item" onclick="go('ask');closeMore()">💬 <span>اسأل ملفاتي</span></button>
+      <button class="more-item" onclick="go('exams');closeMore()">🧪 <span>امتحاناتي</span></button>
       <button class="more-item" onclick="go('my');closeMore()">🎓 <span>موادي</span></button>
       <button class="more-item" onclick="go('fav');closeMore()">⭐ <span>مفضلة</span></button>
       <button class="more-item" onclick="go('ann');closeMore()">📢 <span>إعلانات</span></button>
@@ -610,6 +649,43 @@ bdi{unicode-bidi:isolate}
   <img id="annImg" class="hidden" style="width:100%;border-radius:16px;border:1px solid var(--border);margin-bottom:12px;object-fit:cover;max-height:320px">
   <p class="muted" id="annMeta" style="margin:0 0 12px;font-size:13px"></p>
   <div id="annBody" style="line-height:1.9;white-space:pre-wrap"></div>
+</div></div>
+
+<div class="modal hidden" id="adModal" onclick="if(event.target===this)closeAd()"><div class="modal-card">
+  <div class="head" style="margin-bottom:14px"><h1 style="font-size:19px" id="adTitle">إعلان جديد</h1><button class="btn btn-g" onclick="closeAd()">✕</button></div>
+  <div class="field"><label>العنوان</label><input class="inp" id="adTitleInput" placeholder="مثال: تنبيه مهم عن المحاضرة"></div>
+  <div class="field"><label>النص</label><textarea class="qz-ta" id="adBody" style="min-height:140px" placeholder="اكتب نص الإعلان…"></textarea></div>
+  <div class="field"><label>صورة اختيارية</label><input class="inp" type="file" id="adImg" accept="image/*"><div id="adImgPrev" class="hidden"></div></div>
+  <div class="field"><label>النطاق</label><div id="adScopeLabel" class="ask-chip"></div></div>
+  <button class="btn btn-p" style="width:100%" onclick="saveAnnouncement()">📢 نشر الإعلان</button>
+</div></div>
+
+<div class="modal hidden" id="examModal" onclick="if(event.target===this)closeExamCompose()"><div class="modal-card">
+  <div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">🧪 امتحان جديد للمادة</h1><button class="btn btn-g" onclick="closeExamCompose()">✕</button></div>
+  <div class="field"><label>عنوان الامتحان</label><input class="inp" id="examTitleInput" placeholder="مثال: Midterm 1"></div>
+  <div class="field"><label>مصدر الأسئلة</label>
+    <select class="inp" id="examSource" onchange="toggleExamSource()">
+      <option value="text">نص يلصقه الدكتور</option>
+      <option value="lectures">من محاضرات المادة المرفوعة</option>
+    </select>
+  </div>
+  <div class="field" id="examTextField"><label>الصق النص هنا</label><textarea class="qz-ta" id="examText" style="min-height:170px" placeholder="النص هيتم تنظيمه هيكليًا فقط بدون تغيير المعلومة، وبعدين يتعمل منه امتحان…"></textarea></div>
+  <div class="row2">
+    <div class="field"><label>عدد الأسئلة التقريبي</label><input class="inp" id="examCount" type="number" min="4" max="20" value="8"></div>
+    <div class="field"><label>مدة الأداء (دقائق)</label><input class="inp" id="examDuration" type="number" min="1" max="240" value="20"></div>
+  </div>
+  <div class="row2">
+    <div class="field"><label>يبدأ العرض من</label><input class="inp" id="examVisibleFrom" type="datetime-local"></div>
+    <div class="field"><label>ينتهي العرض في</label><input class="inp" id="examVisibleUntil" type="datetime-local"></div>
+  </div>
+  <div class="field"><label style="display:flex;align-items:center;gap:8px"><input type="checkbox" id="examOneAttempt" checked> محاولة واحدة فقط</label></div>
+  <button class="btn btn-p" style="width:100%" onclick="saveExamFromModal()">🧪 توليد ونشر الامتحان</button>
+  <p class="muted" style="font-size:12px;margin-top:10px">ملاحظة صادقة: النسخة دي محمية بالواجهة وقواعد Firestore، لكنها مش محمية بالكامل ضد طالب محترف يفتح Network. الحماية الكاملة بمفتاح مخفي في R2 وتصحيح على السيرفر هي المرحلة الجاية لو احتجناها.</p>
+</div></div>
+
+<div class="modal hidden" id="examGradesModal" onclick="if(event.target===this)closeExamGrades()"><div class="modal-card" style="width:min(720px,100%)">
+  <div class="head" style="margin-bottom:14px"><h1 style="font-size:19px">📊 درجات الامتحان</h1><button class="btn btn-g" onclick="closeExamGrades()">✕</button></div>
+  <div id="examGradesBody" class="table-wrap"><div class="empty">مفيش محاولات لسه.</div></div>
 </div></div>
 
 <div class="modal hidden" id="editModal"><div class="modal-card">
@@ -678,6 +754,10 @@ const ageDays = d => (Date.now()/1000 - ts(d)) / 86400;
 const rid = () => Math.random().toString(36).slice(2,8).toUpperCase();
 function toast(m,t=''){ const d=document.createElement('div'); d.className='tst '+t; d.textContent=m; $('#toast').appendChild(d); setTimeout(()=>{d.style.opacity=0;setTimeout(()=>d.remove(),250)},3600); }
 function toggleTheme(){ const d=document.documentElement; d.setAttribute('data-theme', d.getAttribute('data-theme')==='dark'?'light':'dark'); }
+function dtLocalToMs(v){ if(!v) return null; const d=new Date(v); return isNaN(d.getTime())?null:d.getTime(); }
+function msToDtLocal(ms){ if(!ms) return ''; const d=new Date(ms); const pad=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes()); }
+function fmtDateTime(ms){ if(!ms) return '—'; try{ return new Date(ms).toLocaleString('ar-EG',{dateStyle:'medium',timeStyle:'short'}); }catch{ return new Date(ms).toISOString().slice(0,16).replace('T',' '); } }
+function fmtDur(min){ return (min||0)+' دقيقة'; }
 
 let currentUser=null, pickedFiles=[], lecFiles=[], lecURLs=[];
 const META = {};
@@ -692,6 +772,8 @@ let myPhotoUrl='';
 const TASKS={}; let taskSeq=0;
 let CHATS=[], currentChatId=null, askScope='all', askFileLabel='', askImageFileId=null, askImageUrl=null, askMsgs=[], askBusy=false;
 let ANN=[];
+let adEditingId=null, adCollegeId=null, adCourseId=null, adScopeText='', adImageUrl='';
+let EXAMS=[], examResultsCache={}, examTimerInterval=null;
 
 /* ===== نظام المهام في الخلفية ===== */
 function renderTasks(){
@@ -848,10 +930,11 @@ function filterMy(){
 function topTabFor(v){
   if(v==='my'||v==='dept'||v==='sem'||v==='course'||v==='lecture'||v==='students') return 'my';
   if(v==='lib'||v==='res'||v==='quiz') return 'lib';
+  if(v==='exams') return 'dash';
   return 'dash';
 }
 function applyView(v){
-  ['dash','upload','proc','res','quiz','ask','lib','my','join','acct','fav','ann','admin','dept','sem','course','lecture','students'].forEach(x=>{ const el=$('#v-'+x); if(el) el.classList.toggle('hidden',x!==v); });
+  ['dash','upload','proc','res','quiz','ask','exams','lib','my','join','acct','fav','ann','admin','dept','sem','course','lecture','students'].forEach(x=>{ const el=$('#v-'+x); if(el) el.classList.toggle('hidden',x!==v); });
   const tt=topTabFor(v);
   $$('.bottom-tabs .nav-i[data-v]').forEach(b=>b.classList.toggle('on',b.dataset.v===tt));
   canManage = (userRole==='admin')||(currentCollege&&myDoctorOf.includes(currentCollege.id));
@@ -862,16 +945,19 @@ function applyView(v){
   const cf=$('#coForm'); if(cf) cf.style.display=rf;
   const lf=$('#lecUploadCard'); if(lf) lf.style.display=canManage?'block':'none';
   const sb=$('#stuBtn'); if(sb) sb.style.display=canManage?'inline-flex':'none';
-  if(v==='dash'){ const hs=$('#homeSearch'); if(hs)hs.value=''; loadStats(); renderCourseCarousel(); renderAnnDash(); }
+  const ab=$('#addExamBtn'); if(ab) ab.classList.toggle('hidden', !canManage);
+  if(v==='dash'){ const hs=$('#homeSearch'); if(hs)hs.value=''; loadStats(); renderCourseCarousel(); renderAnnDash(); renderDashExamBanner(); }
   if(v==='my'){ const ms=$('#mySearch'); if(ms)ms.value=''; loadMy(); }
   if(v==='acct') fillAccount();
   if(v==='fav') renderFav();
   if(v==='ask') renderAsk();
   if(v==='ann') renderAnnList();
+  if(v==='exams') renderMyExams();
   if(v==='admin') loadColleges();
   if(v==='dept') loadDepts();
   if(v==='sem') loadSems();
   if(v==='course') loadCourses();
+  if(v==='lecture'){ loadLectures(); renderCourseExams(); }
   window.scrollTo(0,0);
 }
 function go(v){
@@ -893,31 +979,274 @@ window.addEventListener('popstate',e=>{
   applyView(v);
 });
 
-/* ===== الإشعارات والإعلانات (جهة الطالب) ===== */
+/* ===== الإشعارات والإعلانات (جهة الطالب + إنشاء للدكتور/الأدمن) ===== */
 function seenKey(){ return 'mlk_seen_'+(currentUser?currentUser.uid:'x'); }
 function seenSet(){ try{ return new Set(JSON.parse(localStorage.getItem(seenKey())||'[]')); }catch{ return new Set(); } }
 function markSeen(id){ const s=seenSet(); s.add(id); try{ localStorage.setItem(seenKey(),JSON.stringify([...s])); }catch{} }
 function unseenCount(){ const s=seenSet(); return ANN.filter(a=>!s.has(a.id)).length; }
 function updateBell(){ const n=unseenCount(); const dot=$('#bellDot'); if(dot) dot.classList.toggle('hidden', n===0); }
 async function loadAnnouncements(){
-  if(!currentUser||!myMemberOf.length){ ANN=[]; renderAnnDash(); renderAnnList(); renderNotifs(); updateBell(); return; }
+  ANN=[];
+  if(!currentUser){ renderAnnDash(); renderAnnList(); renderNotifs(); updateBell(); return; }
   try{
-    const ids=myMemberOf.slice(0,30);
-    const snap=await getDocs(query(collection(db,'announcements'),where('collegeId','in',ids)));
-    ANN=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0)).slice(0,40);
+    if(userRole==='admin'){
+      const snap=await getDocs(collection(db,'announcements'));
+      ANN=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else {
+      const ids=[...new Set([...(myMemberOf||[]),...(myDoctorOf||[])])].slice(0,30);
+      if(ids.length){
+        const snap=await getDocs(query(collection(db,'announcements'),where('collegeId','in',ids)));
+        ANN=snap.docs.map(d=>({id:d.id,...d.data()}));
+      }
+    }
   }catch(e){ ANN=[]; }
+  ANN.sort((a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0));
+  ANN=ANN.slice(0,40);
   renderAnnDash(); renderAnnList(); renderNotifs(); updateBell();
 }
 function agoTs(sec){ const d=Math.floor((Date.now()/1000)-(sec||0)); if(d<60) return 'دلوقتي'; if(d<3600) return Math.floor(d/60)+' د'; if(d<86400) return Math.floor(d/3600)+' س'; return Math.floor(d/86400)+' ي'; }
+function canManageAnn(a){ return !!currentUser && (userRole==='admin' || a.createdBy===currentUser.uid || canM(a.collegeId)); }
 function annCardHtml(a,unread){
   const sec=(a.createdAt&&a.createdAt.seconds)||0;
-  return '<div class="ann-card'+(unread?' unread':'')+'" onclick="openAnn(\''+a.id+'\')"><div class="ann-icon">📢</div><div class="ann-body"><b>'+esc(a.title||'إعلان')+'</b><p>'+esc((a.body||'').slice(0,140))+'</p><div class="ann-meta">'+(unread?'<span class="badge-new">جديد</span>':'')+'<span class="pill">'+esc(a.scopeLabel||'الكلية')+'</span><span class="muted" style="font-size:11px">'+agoTs(sec)+'</span></div></div></div>';
+  const act=canManageAnn(a)?'<div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-g" onclick="event.stopPropagation();openAdEdit(\''+a.id+'\')">✏️</button><button class="btn btn-g" onclick="event.stopPropagation();deleteAnnouncement(\''+a.id+'\')">🗑️</button></div>':'';
+  return '<div class="ann-card'+(unread?' unread':'')+'" onclick="openAnn(\''+a.id+'\')"><div class="ann-icon">📢</div><div class="ann-body"><b>'+esc(a.title||'إعلان')+'</b><p>'+esc((a.body||'').slice(0,140))+'</p><div class="ann-meta">'+(unread?'<span class="badge-new">جديد</span>':'')+'<span class="pill">'+esc(a.scopeLabel||'الكلية')+'</span><span class="muted" style="font-size:11px">'+agoTs(sec)+'</span></div>'+act+'</div></div>';
 }
 function renderAnnDash(){ const el=$('#annDash'); if(!el) return; const s=seenSet(); if(!ANN.length){ el.innerHTML='<div class="empty">مفيش إعلانات حاليًا.</div>'; return; } el.innerHTML=ANN.slice(0,3).map(a=>annCardHtml(a,!s.has(a.id))).join(''); }
 function renderAnnList(){ const el=$('#annList'); if(!el) return; const s=seenSet(); if(!ANN.length){ el.innerHTML='<div class="empty">مفيش إعلانات حاليًا.</div>'; return; } el.innerHTML=ANN.map(a=>annCardHtml(a,!s.has(a.id))).join(''); }
 function renderNotifs(){ const el=$('#notifList'); if(!el) return; const s=seenSet(); if(!ANN.length){ el.innerHTML='<div class="empty">مفيش إشعارات.</div>'; return; } el.innerHTML=ANN.slice(0,15).map(a=>{ const un=!s.has(a.id); const sec=(a.createdAt&&a.createdAt.seconds)||0; return '<button class="notif-item'+(un?' unread':'')+'" onclick="openAnn(\''+a.id+'\')"><div class="ann-icon" style="width:38px;height:38px;font-size:18px">📢</div><div style="flex:1;min-width:0"><b>'+esc(a.title||'إعلان')+(un?' <span class="badge-new">جديد</span>':'')+'</b><small>'+esc(a.scopeLabel||'الكلية')+' • '+agoTs(sec)+'</small></div></button>'; }).join(''); }
 function openAnn(id){ const a=ANN.find(x=>x.id===id); if(!a) return; $('#annTitle').textContent=a.title||'إعلان'; $('#annBody').textContent=a.body||''; $('#annMeta').textContent=(a.scopeLabel||'الكلية')+' • '+agoTs((a.createdAt&&a.createdAt.seconds)||0); const img=$('#annImg'); if(a.imageUrl){ img.src=a.imageUrl; img.classList.remove('hidden'); } else { img.classList.add('hidden'); img.removeAttribute('src'); } markSeen(id); updateBell(); renderNotifs(); renderAnnDash(); renderAnnList(); $('#annModal').classList.remove('hidden'); }
 function closeAnn(){ $('#annModal').classList.add('hidden'); }
+function renderAdImgPrev(){ const el=$('#adImgPrev'); if(!el)return; if(adImageUrl){ el.classList.remove('hidden'); el.className='ask-imgprev'; el.innerHTML='<img src="'+adImageUrl+'"><button class="btn btn-g" onclick="clearAdImg()">✕</button>'; } else { el.classList.add('hidden'); el.innerHTML=''; } }
+function clearAdImg(){ adImageUrl=''; renderAdImgPrev(); const ai=$('#adImg'); if(ai) ai.value=''; }
+async function adOnImg(e){ const f=e.target.files[0]; if(!f) return; if(!f.type.startsWith('image/')) return toast('لازم صورة','err'); if(f.size>8*1024*1024) return toast('الصورة أكبر من 8 ميجا','err'); try{ toast('برفع الصورة…','warn'); const blob=await resizeImage(f,1200); const r=await worker('/ann-img',{method:'PUT',headers:{'Content-Type':'image/jpeg'},body:blob}); const j=await r.json(); if(!r.ok||!j.imageId) throw new Error(j.message||'فشل رفع الصورة'); adImageUrl=WORKER_URL+j.url; renderAdImgPrev(); toast('الصورة اترفقت','ok'); }catch(err){ toast('فشل: '+(err.message||err),'err'); } }
+function bindAdImg(){ const ai=$('#adImg'); if(ai&&!ai.dataset.bound){ ai.dataset.bound='1'; ai.addEventListener('change',adOnImg); } }
+function openAdCompose(collegeId,courseId){
+  if(!currentUser) return;
+  if(userRole!=='admin' && !canM(collegeId)) return toast('مش مسموح','err');
+  const col=COLLEGES.find(x=>x.id===collegeId)||MY.find(x=>x.id===collegeId)||currentCollege;
+  const course=COURSES.find(x=>x.id===courseId)||(currentCourse&&currentCourse.id===courseId?currentCourse:null);
+  adEditingId=null; adCollegeId=collegeId; adCourseId=courseId||null;
+  adScopeText = course ? ('مادة: '+(course.name||'')) : ('كلية: '+(col?col.name:''));
+  adImageUrl='';
+  $('#adTitle').textContent='إعلان جديد';
+  $('#adTitleInput').value=''; $('#adBody').value=''; const ai=$('#adImg'); if(ai) ai.value='';
+  renderAdImgPrev(); $('#adScopeLabel').textContent=adScopeText; bindAdImg();
+  $('#adModal').classList.remove('hidden');
+}
+function openAdEdit(id){
+  const a=ANN.find(x=>x.id===id); if(!a) return;
+  if(!canManageAnn(a)) return toast('مش مسموح','err');
+  adEditingId=id; adCollegeId=a.collegeId; adCourseId=a.courseId||null; adScopeText=a.scopeLabel||'إعلان'; adImageUrl=a.imageUrl||'';
+  $('#adTitle').textContent='تعديل الإعلان';
+  $('#adTitleInput').value=a.title||''; $('#adBody').value=a.body||''; const ai=$('#adImg'); if(ai) ai.value='';
+  renderAdImgPrev(); $('#adScopeLabel').textContent=adScopeText; bindAdImg();
+  $('#adModal').classList.remove('hidden');
+}
+function closeAd(){ $('#adModal').classList.add('hidden'); }
+async function saveAnnouncement(){
+  const title=$('#adTitleInput').value.trim(); const body=$('#adBody').value.trim();
+  if(!title||!body) return toast('اكتب عنوان ونص','warn');
+  if(!adCollegeId) return toast('مفيش كلية مختارة','err');
+  const data={collegeId:adCollegeId,courseId:adCourseId||null,title,body,imageUrl:adImageUrl||'',scopeLabel:adScopeText,updatedAt:serverTimestamp()};
+  try{
+    if(adEditingId){ await updateDoc(doc(db,'announcements',adEditingId),data); toast('اتعدّل الإعلان ✓','ok'); }
+    else { data.createdBy=currentUser.uid; data.createdAt=serverTimestamp(); await addDoc(collection(db,'announcements'),data); toast('اتنشر الإعلان 📢','ok'); }
+    closeAd(); loadAnnouncements();
+  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+}
+async function deleteAnnouncement(id){
+  const a=ANN.find(x=>x.id===id); if(!a) return;
+  if(!canManageAnn(a)) return toast('مش مسموح','err');
+  if(!await askConfirm('تحذف الإعلان ده؟')) return;
+  try{
+    await deleteDoc(doc(db,'announcements',id));
+    if(a.imageUrl && a.imageUrl.includes('/ann-img/')){ const iid=a.imageUrl.split('/ann-img/')[1]; if(iid){ try{ await worker('/ann-img/'+iid,{method:'DELETE'}); }catch{} } }
+    toast('اتحذف','ok'); loadAnnouncements();
+  }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
+}
+
+/* ===== امتحانات الدكتور الرسمية (C مبسّطة: مواعيد + مدة + محاولة واحدة + درجات) ===== */
+async function loadExams(){
+  EXAMS=[]; examResultsCache={};
+  if(!currentUser){ renderMyExams(); renderCourseExams(); renderDashExamBanner(); return; }
+  try{
+    if(userRole==='admin'){
+      const snap=await getDocs(collection(db,'course_exams'));
+      EXAMS=snap.docs.map(d=>({id:d.id,...d.data()}));
+    } else {
+      const ids=[...new Set([...(myMemberOf||[]),...(myDoctorOf||[])])].slice(0,30);
+      if(ids.length){
+        const snap=await getDocs(query(collection(db,'course_exams'),where('collegeId','in',ids)));
+        EXAMS=snap.docs.map(d=>({id:d.id,...d.data()}));
+      }
+    }
+  }catch(e){ EXAMS=[]; }
+  EXAMS.sort((a,b)=>((b.createdAt&&b.createdAt.seconds)||0)-((a.createdAt&&a.createdAt.seconds)||0));
+  try{
+    const rs=await getDocs(query(collection(db,'exam_results'),where('uid','==',currentUser.uid)));
+    rs.docs.forEach(d=>{ const x=d.data(); examResultsCache[x.examId]={id:d.id,...x}; });
+  }catch(e){ examResultsCache={}; }
+  renderMyExams(); renderCourseExams(); renderDashExamBanner();
+}
+function examStatus(exam){
+  const now=Date.now();
+  const from=exam.visibleFrom||0, until=exam.visibleUntil||0;
+  const res=examResultsCache[exam.id];
+  if(res&&res.submittedAt) return 'done';
+  if(from&&now<from) return 'upcoming';
+  if(until&&now>until) return 'past';
+  return 'live';
+}
+function renderMyExams(){
+  const el=$('#myExamsList'); if(!el) return;
+  if(!EXAMS.length){ el.innerHTML='<div class="empty">مفيش امتحانات حاليًا.</div>'; return; }
+  el.innerHTML=EXAMS.map(exam=>{
+    const st=examStatus(exam);
+    const res=examResultsCache[exam.id];
+    const from=exam.visibleFrom?fmtDateTime(exam.visibleFrom):'مفتوح';
+    const until=exam.visibleUntil?fmtDateTime(exam.visibleUntil):'بدون نهاية';
+    const dur=fmtDur(exam.durationMin);
+    const score=res&&res.submittedAt?('<span class="qz-best">'+res.pct+'%</span>'):'';
+    const btn= st==='live' ? '<button class="btn btn-p" onclick="startOfficialExam(\''+exam.id+'\')">'+(res&&!res.submittedAt?'استكمال الامتحان':'ابدأ الامتحان')+'</button>' :
+               st==='done' ? '<button class="btn btn-s" onclick="showOfficialResult(\''+exam.id+'\')">عرض النتيجة</button>' :
+               st==='upcoming'? '<button class="btn btn-s" disabled>لسه ما فتحش</button>' :
+               '<button class="btn btn-s" disabled>انتهى</button>';
+    return '<div class="exam-card"><div class="exam-top"><div><div class="exam-title">'+esc(exam.title||'امتحان')+'</div><div class="exam-sub">'+esc(exam.courseName||'')+' • '+dur+' • من '+from+' إلى '+until+'</div></div><span class="exam-status '+st+'">'+({live:'مفتوح',upcoming:'قريبًا',past:'انتهى',done:'اتحل'}[st])+'</span></div><div class="exam-actions">'+score+btn+'</div></div>';
+  }).join('');
+}
+function renderCourseExams(){
+  const el=$('#lecExamList'); if(!el) return;
+  const btn=$('#addExamBtn'); if(btn) btn.classList.toggle('hidden', !canManage);
+  if(!currentCourse){ el.innerHTML=''; return; }
+  const list=EXAMS.filter(x=>x.courseId===currentCourse.id);
+  if(!list.length){ el.innerHTML='<div class="empty">مفيش امتحانات للمادة دي.</div>'; return; }
+  el.innerHTML=list.map(exam=>{
+    const st=examStatus(exam);
+    const manage=canManage;
+    return '<div class="exam-card"><div class="exam-top"><div><div class="exam-title">'+esc(exam.title||'امتحان')+'</div><div class="exam-sub">'+fmtDur(exam.durationMin)+' • '+((exam.questions&&exam.questions.length)||0)+' سؤال • '+({live:'مفتوح',upcoming:'قريبًا',past:'انتهى',done:'اتحل'}[st])+'</div></div>'+(manage?'<div class="exam-actions"><button class="btn btn-g" onclick="openExamGrades(\''+exam.id+'\')">📊</button><button class="btn btn-g" onclick="deleteExam(\''+exam.id+'\')">🗑️</button></div>':'')+'</div></div>';
+  }).join('');
+}
+function renderDashExamBanner(){
+  const el=$('#dashExamBanner'); if(!el) return;
+  const live=EXAMS.filter(e=>examStatus(e)==='live' && !(examResultsCache[e.id]&&examResultsCache[e.id].submittedAt));
+  if(!live.length){ el.classList.add('hidden'); el.innerHTML=''; return; }
+  const e=live[0];
+  el.classList.remove('hidden');
+  el.innerHTML='<div class="dash-exam"><div><b>🧪 لديك امتحان: '+esc(e.title||'')+'</b><small>'+esc(e.courseName||'')+' • '+fmtDur(e.durationMin)+'</small></div><button class="btn btn-p" onclick="startOfficialExam(\''+e.id+'\')">ابدأ</button></div>';
+}
+function openExamCompose(courseId){
+  if(!canManage) return toast('مش مسموح','err');
+  const cid=courseId||(currentCourse?currentCourse.id:null);
+  if(!cid) return toast('افتح المادة الأول','err');
+  $('#examTitleInput').value=''; $('#examText').value=''; $('#examCount').value=8; $('#examDuration').value=20;
+  $('#examVisibleFrom').value=''; $('#examVisibleUntil').value=''; $('#examOneAttempt').checked=true;
+  $('#examSource').value='text'; toggleExamSource();
+  $('#examModal').dataset.courseId=cid;
+  $('#examModal').classList.remove('hidden');
+}
+function closeExamCompose(){ $('#examModal').classList.add('hidden'); }
+function toggleExamSource(){ const v=$('#examSource').value; $('#examTextField').style.display=v==='text'?'block':'none'; }
+async function saveExamFromModal(){
+  const cid=$('#examModal').dataset.courseId; if(!cid||!canManage) return toast('مش مسموح','err');
+  const title=$('#examTitleInput').value.trim(); if(!title) return toast('اكتب عنوان','warn');
+  const source=$('#examSource').value; const count=Math.max(4,Math.min(20,Number($('#examCount').value||8)));
+  const duration=Math.max(1,Math.min(240,Number($('#examDuration').value||20)));
+  const from=dtLocalToMs($('#examVisibleFrom').value); const until=dtLocalToMs($('#examVisibleUntil').value);
+  const oneAttempt=$('#examOneAttempt').checked;
+  let fileIds=[], rawText='';
+  if(source==='text'){ rawText=$('#examText').value.trim(); if(!rawText) return toast('الصق النص','warn'); }
+  else {
+    try{
+      const snap=await getDocs(query(collection(db,'lectures'),where('courseId','==',cid)));
+      snap.docs.forEach(d=>{ const x=d.data(); (x.fileIds||(x.fileId?[x.fileId]:[])).forEach(fid=>{ if(fileIds.length<12) fileIds.push(fid); }); if(x.rawText&&rawText.length<60000) rawText+='\n'+x.rawText; });
+    }catch(e){}
+    if(!fileIds.length && String(rawText).replace(/\s/g,'').length<40) return toast('المادة مفيهاش محاضرات مرفوعة','err');
+  }
+  const tid='ex'+Date.now(); const tt={id:tid,name:'امتحان: '+title,status:'active',progress:15,msg:'بيولّد الأسئلة…',controller:new AbortController(),fileId:null,fileIds:null,rec:null,courseId:cid};
+  TASKS[tid]=tt; renderTasks();
+  try{
+    const r=await worker('/quiz',{method:'POST',signal:tt.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileIds,lang:'ar',rawText,questionCount:count})});
+    const j=await r.json(); if(!r.ok||j.error) throw new Error(j.message||j.error||'فشل التوليد');
+    const qs=(j.quiz&&j.quiz.questions)||[]; if(!qs.length) throw new Error('مفيش أسئلة');
+    const course=COURSES.find(x=>x.id===cid)||currentCourse||{};
+    await addDoc(collection(db,'course_exams'),{courseId:cid,collegeId:course.collegeId||(currentCollege?currentCollege.id:''),courseName:course.name||'',title,sourceType:source,questions:qs,durationMin:duration,visibleFrom:from||null,visibleUntil:until||null,oneAttempt,createdBy:currentUser.uid,createdAt:serverTimestamp()});
+    tt.status='done'; tt.msg='الامتحان اتنشر'; renderTasks(); toast('الامتحان اتنشر 🧪','ok'); closeExamCompose(); loadExams();
+  }catch(err){ if(err&&err.name==='AbortError'){delete TASKS[tid];renderTasks();return;} tt.status='error'; tt.progress=100; tt.msg=(err&&err.message)||'فشل'; renderTasks(); toast('فشل: '+tt.msg,'err'); }
+}
+async function deleteExam(id){ if(!canManage) return toast('مش مسموح','err'); if(!await askConfirm('تحذف الامتحان ده؟')) return; try{ await deleteDoc(doc(db,'course_exams',id)); toast('اتحذف','ok'); loadExams(); }catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); } }
+async function openExamGrades(examId){
+  if(!canManage) return toast('مش مسموح','err');
+  const body=$('#examGradesBody'); body.innerHTML='<div class="empty">بيحمّل…</div>';
+  $('#examGradesModal').classList.remove('hidden');
+  try{
+    const snap=await getDocs(query(collection(db,'exam_results'),where('examId','==',examId)));
+    const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((b.submittedAt&&b.submittedAt.seconds)||0)-((a.submittedAt&&a.submittedAt.seconds)||0));
+    if(!rows.length){ body.innerHTML='<div class="empty">مفيش محاولات لسه.</div>'; return; }
+    body.innerHTML='<table class="grade-table"><thead><tr><th>الطالب</th><th>البريد</th><th>الدرجة</th><th>الصح</th><th>الوقت</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.studentName||'طالب')+'</td><td>'+esc(r.email||'')+'</td><td><b>'+r.pct+'%</b></td><td>'+(r.correct||0)+'/'+(r.total||0)+'</td><td>'+fmtDateTime((r.submittedAt&&r.submittedAt.seconds?r.submittedAt.seconds*1000:0))+'</td></tr>').join('')+'</tbody></table>';
+  }catch(e){ body.innerHTML='<div class="empty">خطأ: '+esc(e.message)+'</div>'; }
+}
+function closeExamGrades(){ $('#examGradesModal').classList.add('hidden'); }
+function stopExamTimer(){ if(examTimerInterval){clearInterval(examTimerInterval);examTimerInterval=null;} }
+function tickExamTimer(){
+  const ctx=window._quizCtx; if(!ctx||!ctx.official) return;
+  const left=Math.max(0,Math.floor((ctx.deadline-Date.now())/1000));
+  const el=$('#qzTimer'); if(el){ el.classList.remove('hidden'); const m=Math.floor(left/60), s=left%60; el.textContent='⏱ '+m+':'+String(s).padStart(2,'0'); el.classList.toggle('danger', left<=60); }
+  if(left<=0){ stopExamTimer(); toast('انتهى الوقت — تم التسليم تلقائيًا','warn'); submitOfficialExam(true); }
+}
+async function startOfficialExam(examId){
+  const exam=EXAMS.find(e=>e.id===examId); if(!exam) return toast('مش لاقي الامتحان','err');
+  const st=examStatus(exam); if(st==='upcoming') return toast('الامتحان لسه ما فتحش','warn'); if(st==='past') return toast('انتهت مدة الامتحان','err');
+  if(st==='done') return showOfficialResult(examId);
+  const attemptId=currentUser.uid+'_'+examId;
+  let attempt=null;
+  try{ const d=await getDoc(doc(db,'exam_results',attemptId)); if(d.exists()) attempt={id:d.id,...d.data()}; }catch(e){}
+  if(attempt&&attempt.submittedAt){ examResultsCache[examId]=attempt; return showOfficialResult(examId); }
+  const now=Date.now();
+  const startedAt=attempt&&attempt.startedAt?attempt.startedAt:now;
+  const deadline=startedAt+(exam.durationMin||20)*60000;
+  const visibleDeadline=exam.visibleUntil?Math.min(deadline,exam.visibleUntil):deadline;
+  if(!attempt){
+    try{ await setDoc(doc(db,'exam_results',attemptId),{examId,uid:currentUser.uid,studentName:currentUser.displayName||'',email:(currentUser.email||'').toLowerCase(),courseId:exam.courseId,collegeId:exam.collegeId,startedAt:now,answers:[],submittedAt:null,pct:null}); }catch(e){ return toast('فشل بدء المحاولة: '+(e.code||e.message),'err'); }
+    examResultsCache[examId]={id:attemptId,examId,uid:currentUser.uid,startedAt:now,answers:[]};
+  }
+  window._quizCtx={rec:{id:exam.courseId,fileName:'امتحان: '+exam.title,fileIds:[],fileId:null,isGroup:false,rawText:'',quiz:{questions:exam.questions||[]},bestScore:null,col:'course_exams'}, quiz:{questions:exam.questions||[]}, answers:(attempt&&attempt.answers)||[], idx:0, from:'exams', review:null, pct:null, official:true, examId, attemptId, deadline:visibleDeadline, oneAttempt:!!exam.oneAttempt};
+  $('#qzTitle').textContent='امتحان: '+exam.title;
+  $('#qzSub').textContent='مدة الأداء '+(exam.durationMin||20)+' دقيقة';
+  const bs=$('#qzBest'); bs.classList.add('hidden');
+  const nb=$('#newQuizBtn'); if(nb) nb.classList.add('hidden');
+  go('quiz');
+  renderQuizQuestion();
+  stopExamTimer(); examTimerInterval=setInterval(tickExamTimer,1000); tickExamTimer();
+}
+function showOfficialResult(examId){
+  const res=examResultsCache[examId]; if(!res||!res.submittedAt) return toast('لسه ما سلّمتش','warn');
+  window._quizCtx={rec:{id:examId,fileName:'نتيجة الامتحان',fileIds:[],quiz:res.quizSnapshot||null,col:'course_exams'}, quiz:res.quizSnapshot||null, answers:res.answers||[], idx:0, from:'exams', review:res.review||null, pct:res.pct, official:true, examId, readonly:true};
+  $('#qzTitle').textContent='نتيجة: '+(res.title||'الامتحان');
+  $('#qzSub').textContent='درجتك النهائية';
+  const bs=$('#qzBest'); bs.classList.add('hidden');
+  const nb=$('#newQuizBtn'); if(nb) nb.classList.add('hidden');
+  const tm=$('#qzTimer'); if(tm) tm.classList.add('hidden');
+  go('quiz');
+  showQuizResult();
+}
+async function submitOfficialExam(auto){
+  const ctx=window._quizCtx; if(!ctx||!ctx.official||ctx.readonly) return;
+  stopExamTimer();
+  const qs=(ctx.quiz&&ctx.quiz.questions)||[]; const ans=ctx.answers||[];
+  const review=[]; const essayItems=[];
+  qs.forEach((q,i)=>{ const a=ans[i]||{}; if(q.type==='mcq'||q.type==='tf'){ const ok=(a.sel===q.answer); review.push({qid:i,q,a,ok,score:ok?1:0,auto:true,feedback:''}); } else { essayItems.push({qid:i,question:q.question,reference:q.reference||'',answer:String(a.text||'').slice(0,2000)}); review.push({qid:i,q,a,ok:null,score:null,auto:false,feedback:''}); } });
+  if(essayItems.length){ try{ const r=await worker('/quiz-grade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lang:'ar',items:essayItems})}); const j=await r.json(); if(r.ok&&!j.error){ const gmap={}; (j.graded||[]).forEach(g=>gmap[g.qid]=g); review.forEach(rv=>{ if(!rv.auto){ const g=gmap[rv.qid]; if(g&&typeof g.score==='number'&&g.score>=0){ rv.score=g.score/10; rv.ok=(g.score>=5); rv.feedback=g.feedback||''; } else { rv.score=null; rv.ok=null; rv.feedback='تعذّر التصحيح.'; } } }); } }catch(e){} }
+  let denom=0,num=0; review.forEach(rv=>{ if(rv.score!=null){ denom+=1; num+=rv.score; } }); const pct=denom?Math.round(num/denom*100):0;
+  const correct=review.filter(r=>r.ok===true).length; const total=review.filter(r=>r.score!=null).length;
+  const exam=EXAMS.find(e=>e.id===ctx.examId)||{};
+  const payload={answers:ans,review,pct,correct,total,submittedAt:serverTimestamp(),auto:!!auto,title:exam.title||'امتحان'};
+  try{ await setDoc(doc(db,'exam_results',ctx.attemptId),payload,{merge:true}); }catch(e){ toast('فشل حفظ النتيجة: '+(e.code||e.message),'err'); }
+  examResultsCache[ctx.examId]={id:ctx.attemptId,examId:ctx.examId,uid:currentUser.uid,startedAt:ctx.deadline-(exam.durationMin||20)*60000,submittedAt:{seconds:Math.floor(Date.now()/1000)},answers:ans,review,pct,correct,total,title:exam.title,quizSnapshot:ctx.quiz};
+  ctx.readonly=true; ctx.review=review; ctx.pct=pct;
+  showQuizResult();
+  toast(auto?'اتسلّم تلقائيًا — درجتك '+pct+'%':'اتسلّم — درجتك '+pct+'%', auto?'warn':'ok');
+  loadExams();
+}
 
 /* ===== كاروسيل المقررات (اختصار آخر المواد) ===== */
 function recentKey(){ return 'mlk_recent_courses'; }
@@ -1139,6 +1468,7 @@ async function deleteAccount(){
   toast('بمسح بياناتك… استنى شوية','warn');
   try{ const s=await getDocs(query(collection(db,'summaries'),where('uid','==',currentUser.uid))); for(const d of s.docs){ const x=d.data(); const ids=x.fileIds|| (x.fileId?[x.fileId]:[]); for(const fid of ids){ try{ await worker('/file/'+fid,{method:'DELETE'}); }catch{} } try{ await deleteDoc(doc(db,'summaries',d.id)); }catch{} } }catch{}
   try{ const qa=await getDocs(query(collection(db,'quiz_attempts'),where('uid','==',currentUser.uid))); for(const d of qa.docs){ try{ await deleteDoc(doc(db,'quiz_attempts',d.id)); }catch{} } }catch{}
+  try{ const er=await getDocs(query(collection(db,'exam_results'),where('uid','==',currentUser.uid))); for(const d of er.docs){ try{ await deleteDoc(doc(db,'exam_results',d.id)); }catch{} } }catch{}
   try{ const ac=await getDocs(query(collection(db,'ask_chats'),where('uid','==',currentUser.uid))); for(const d of ac.docs){ try{ await deleteDoc(doc(db,'ask_chats',d.id)); }catch{} } }catch{}
   try{ await worker('/avatar',{method:'DELETE'}); }catch{}
   try{ await deleteDoc(doc(db,'org_roles',currentUser.uid)); }catch{}
@@ -1215,7 +1545,7 @@ async function loadColleges(){
   const snap=await getDocs(collection(db,'colleges'));
   let all=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
   COLLEGES = userRole==='admin' ? all : all.filter(x=>myDoctorOf.includes(x.id));
-  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small class="muted">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(userRole==='admin'?'<button class="btn btn-g" onclick="openDoc(\''+x.id+'\',\''+esc(x.name)+'\')">🧑‍🏫 دكتور</button>':'')+(canM(x.id)?(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>'):'')+'<button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id,null,x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات. أنشئ واحدة فوق ☝️</div>';
+  el.innerHTML=COLLEGES.length?COLLEGES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small class="muted">'+esc(x.code)+(x.inviteCode?' • كود: '+esc(x.inviteCode):'')+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap">'+(userRole==='admin'?'<button class="btn btn-g" onclick="openDoc(\''+x.id+'\',\''+esc(x.name)+'\')">🧑‍ دكتور</button>':'')+(canM(x.id)?(x.inviteCode?'':'<button class="btn btn-g" onclick="genCollegeCode(\''+x.id+'\')">🔑</button>'):'')+'<button class="btn btn-g" onclick="openAdCompose(\''+x.id+'\')">📢</button><button class="btn btn-s" onclick="openDept(\''+x.id+'\')">قسم ←</button>'+actions('college',x.id,null,x.id)+'</div></div>').join(''):'<div class="empty">مفيش كليات. أنشئ واحدة فوق ☝️</div>';
 }
 function openDept(id){ const c=COLLEGES.find(x=>x.id===id); if(!c)return; currentCollege={id:c.id,name:c.name}; readOnly=false; $('#deptTitle').textContent='أقسام '+c.name; go('dept'); }
 async function createDept(){
@@ -1258,7 +1588,7 @@ async function loadCourses(){
   const el=$('#courseList'); if(!el||!currentSem) return;
   const snap=await getDocs(query(collection(db,'courses'),where('semesterId','==',currentSem.id)));
   COURSES=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>ts(b)-ts(a));
-  el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small class="muted">كود: '+esc(x.code)+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button><button class="btn btn-g" onclick="startCourseQuiz(\''+x.id+'\')">📝 امتحان المادة</button>'+favStar('course',x.id,x.name)+actions('course',x.id)+'</div></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
+  el.innerHTML=COURSES.length?COURSES.map(x=>'<div class="chip" style="width:100%;justify-content:space-between;margin:0 0 8px;flex-wrap:wrap"><div><b>'+esc(x.name)+'</b><br><small class="muted">كود: '+esc(x.code)+'</small></div><div style="display:flex;gap:7px;flex-wrap:wrap"><button class="btn btn-s" onclick="openLecture(\''+x.id+'\',\'course\')">محاضرة ←</button><button class="btn btn-g" onclick="startCourseQuiz(\''+x.id+'\')">📝 امتحان المادة</button>'+(canManage?'<button class="btn btn-g" onclick="openExamCompose(\''+x.id+'\')">🧪 امتحان رسمي</button><button class="btn btn-g" onclick="openAdCompose(\''+(x.collegeId||(currentCollege?currentCollege.id:''))+'\',\''+x.id+'\')">📢</button>':'')+favStar('course',x.id,x.name)+actions('course',x.id)+'</div></div>').join(''):'<div class="empty">مفيش مواد لسه. أنشئ واحدة فوق ☝️</div>';
 }
 async function openLecture(id,from){
   let c=COURSES.find(x=>x.id===id)||MY.find(x=>x.id===id);
@@ -1269,7 +1599,7 @@ async function openLecture(id,from){
   canLec=canManage;
   recordRecentCourse(c);
   $('#lecTitle').textContent='محاضرات '+c.name;
-  loadLectures(); go('lecture');
+  loadLectures(); renderCourseExams(); go('lecture');
 }
 async function createLecture(){
   const base=$('#lName').value.trim();
@@ -1327,7 +1657,7 @@ async function joinByCode(){
     if(ex.exists()) await updateDoc(ref,{memberOf:arrayUnion(cid)});
     else await setDoc(ref,{role:'student',doctorOf:[],memberOf:[cid]});
     await setDoc(doc(db,'members',cid+'_'+currentUser.uid),{collegeId:cid,uid:currentUser.uid,name:currentUser.displayName||'',email:(currentUser.email||'').toLowerCase(),joinedAt:serverTimestamp()});
-    toast('انضميت للكلية 🎉','ok'); $('#joinCode').value=''; go('my'); loadMy(); myMemberOf=myMemberOf.concat([cid]); loadAnnouncements();
+    toast('انضميت للكلية 🎉','ok'); $('#joinCode').value=''; go('my'); loadMy(); myMemberOf=myMemberOf.concat([cid]); loadAnnouncements(); loadExams();
   } catch(e){ toast('مرفوض: '+(e.code||e.message),'err'); }
 }
 async function loadMy(){
@@ -1359,7 +1689,7 @@ function hideBoot(){ if(booted)return; booted=true; const b=$('#boot'); if(b) b.
 onAuthStateChanged(auth,u=>{
   hideBoot();
   currentUser=u;
-  if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#topHeader').classList.remove('hidden'); $('#bottomTabs').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; loadFavs(); go('dash'); loadLibrary(); loadRole().then(()=>{ loadHeaderAvatar(); fillAccount(); loadAnnouncements(); }); loadMy(); loadAskChats(); }
+  if(u){ ensureUserDoc(); $('#gate').classList.add('hidden'); $('#topHeader').classList.remove('hidden'); $('#bottomTabs').classList.remove('hidden'); $('#app').classList.remove('hidden'); $('#navEmail').textContent=u.email; $('#sideEmail').textContent=u.displayName||u.email; $('#welcome').textContent='أهلًا '+(u.displayName||'بيك')+' 👋'; loadFavs(); go('dash'); loadLibrary(); loadRole().then(()=>{ loadHeaderAvatar(); fillAccount(); loadAnnouncements(); loadExams(); }); loadMy(); loadAskChats(); }
   else { $('#gate').classList.remove('hidden'); $('#topHeader').classList.add('hidden'); $('#bottomTabs').classList.add('hidden'); $('#app').classList.add('hidden'); myPhotoUrl=''; loadHeaderAvatar(); }
 });
 setTimeout(hideBoot,5000);
@@ -1432,7 +1762,7 @@ function renderResult(rec){
   });
   typeBar+='</div>';
   const bsBadge=(typeof rec.bestScore==='number')?' <span class="qz-best">🏆 '+rec.bestScore+'%</span>':'';
-  let html='<div class="head"><div><button class="btn btn-g" onclick="goBack()" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+bsBadge+(rec.isGroup?' <span class="pill p">مجموعة '+(rec.fileIds||[]).length+' ملفات</span>':'')+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+((s.wordCount||0).toLocaleString? (s.wordCount||0).toLocaleString('ar-EG') : (s.wordCount||0))+'</bdi> كلمة</span> <span class="pill"><bdi>'+((s.readingTime||1))+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  let html='<div class="head"><div><button class="btn btn-g" onclick="goBack()" style="margin-bottom:8px">→ رجوع</button><h1>'+esc(rec.fileName)+bsBadge+(rec.isGroup?' <span class="pill p">مجموعة '+(rec.fileIds||[]).length+' ملفات</span>':'')+'</h1><p><span class="pill p">'+esc(prov)+'</span> <span class="pill"><bdi>'+((s.wordCount||0))+'</bdi> كلمة</span> <span class="pill"><bdi>'+((s.readingTime||1))+'</bdi> دقيقة قراءة</span></p></div><div style="display:flex;gap:8px;flex-wrap:wrap">';
   if(canDl) html+='<button class="btn btn-s" onclick="dlOrig(\''+rec.id+'\')">📎 الملف الأصلي</button>';
   if(canQuiz) html+='<button class="btn btn-g" onclick="startQuizRec()">📝 اعمل امتحان</button>';
   if(canAsk) html+='<button class="btn btn-g" onclick="askAboutRec()">💬 اسأل عن ده</button>';
@@ -1452,21 +1782,25 @@ function renderResult(rec){
   ensureKatex().then(()=>renderMath($('#resBody'))).catch(()=>{});
 }
 
-/* ====================== محرك الامتحان A ====================== */
-function quizCol(col){ return col==='summary'?'summaries':col==='lecture'?'lectures':col==='course'?'courses':col; }
+/* ====================== محرك الامتحان الذاتي A ====================== */
+function quizCol(c){ const m={summary:'summaries',lecture:'lectures',course:'courses',summaries:'summaries',lectures:'lectures',courses:'courses'}; return m[c]||c; }
 function startQuizRec(){ const rec=window._lastRec; if(!rec) return; loadQuizForRec(rec.col||'summaries', rec.id); }
 async function startQuizById(col,id){ await loadQuizForRec(quizCol(col),id); }
 async function startCourseQuiz(courseId){
   let c=COURSES.find(x=>x.id===courseId);
   if(!c){ try{ const d=await getDoc(doc(db,'courses',courseId)); if(d.exists()) c={id:d.id,...d.data()}; }catch{} }
   if(!c) return toast('مش لاقي المادة','err');
-  const ids=[];
+  if(c.quiz && c.quiz.questions && c.quiz.questions.length){
+    const rec={id:courseId,fileName:'امتحان مادة: '+c.name,fileIds:[],fileId:null,isGroup:false,rawText:'',quiz:c.quiz,bestScore:(typeof c.bestScore==='number')?c.bestScore:null,col:'courses'};
+    startQuiz(rec,c.quiz); return;
+  }
+  const ids=[]; let raw='';
   try{
     const snap=await getDocs(query(collection(db,'lectures'),where('courseId','==',courseId)));
-    snap.docs.forEach(d=>{ const x=d.data(); (x.fileIds||(x.fileId?[x.fileId]:[])).forEach(fid=>{ if(ids.length<12) ids.push(fid); }); });
+    snap.docs.forEach(d=>{ const x=d.data(); (x.fileIds||(x.fileId?[x.fileId]:[])).forEach(fid=>{ if(ids.length<12) ids.push(fid); }); if(x.rawText&&raw.length<60000) raw+='\n'+x.rawText; });
   }catch(e){}
-  if(!ids.length) return toast('المادة مفيهاش محاضرات مرفوعة حاليًا — ارفع محاضرة الأول','err');
-  const rec={id:courseId,fileName:'امتحان مادة: '+c.name,fileIds:ids,fileId:null,isGroup:ids.length>1,rawText:'',quiz:null,bestScore:null,col:'courses'};
+  if(!ids.length && String(raw).replace(/\s/g,'').length<40) return toast('المادة مفيهاش محاضرات مرفوعة — ارفع محاضرة أو استخدم «امتحان رسمي» من نص','err');
+  const rec={id:courseId,fileName:'امتحان مادة: '+c.name,fileIds:ids,fileId:null,isGroup:ids.length>1,rawText:raw,quiz:null,bestScore:(typeof c.bestScore==='number')?c.bestScore:null,col:'courses'};
   startQuiz(rec,null);
 }
 async function loadQuizForRec(col,id){
@@ -1480,16 +1814,18 @@ async function loadQuizForRec(col,id){
   }catch(e){}
   if(!rec) return toast('مش لاقي الملف','err');
   const ids=rec.fileIds||[];
-  if(!ids.length) return toast('الملف الأصلي اتحذف — الامتحان محتاج الملف مرفوع من جديد. اسأل ملفاتي لسه شغال من النص المخزن.','err');
+  if(!ids.length) return toast('الملف الأصلي اتحذف — الامتحان الذاتي محتاج الملف مرفوع. اسأل ملفاتي لسه شغال من النص المخزن.','err');
   if(rec.quiz && rec.quiz.questions && rec.quiz.questions.length){ startQuiz(rec, rec.quiz); return; }
   startQuiz(rec, null);
 }
 function startQuiz(rec, quizData){
   const qs=(quizData&&quizData.questions)||null;
-  window._quizCtx={rec, quiz:qs?{questions:qs}:null, answers:qs?qs.map(()=>({})):[], idx:0, from:(window._lastRec&&window._lastRec.id===rec.id)?'res':'lib', review:null, pct:null};
+  window._quizCtx={rec, quiz:qs?{questions:qs}:null, answers:qs?qs.map(()=>({})):[], idx:0, from:(window._lastRec&&window._lastRec.id===rec.id)?'res':'lib', review:null, pct:null, official:false};
   $('#qzTitle').textContent='امتحان: '+rec.fileName;
   $('#qzSub').textContent=qs?'محفوظ — من غير استهلاك':'بيولّد الأسئلة…';
   const bs=$('#qzBest'); if(rec.bestScore!=null){ bs.textContent='🏆 أفضل درجة: '+rec.bestScore+'%'; bs.classList.remove('hidden'); } else bs.classList.add('hidden');
+  const tm=$('#qzTimer'); if(tm) tm.classList.add('hidden');
+  const nb=$('#newQuizBtn'); if(nb) nb.classList.remove('hidden');
   go('quiz');
   if(qs && qs.length){ renderQuizQuestion(); } else { generateQuiz(); }
 }
@@ -1501,12 +1837,12 @@ async function generateQuiz(){
   TASKS[tid]=tt; renderTasks();
   try{
     const r=await worker('/quiz',{method:'POST',signal:tt.controller.signal,headers:{'Content-Type':'application/json'},body:JSON.stringify({fileIds:ids,lang:'ar',rawText:rec.rawText||''})});
-    const j=await r.json(); if(!r.ok||j.error) throw new Error(j.message||'فشل توليد الامتحان');
+    const j=await r.json(); if(!r.ok||j.error) throw new Error(j.message||j.error||'فشل توليد الامتحان');
     const qs=(j.quiz&&j.quiz.questions)||[];
     if(!qs.length) throw new Error('مفيش أسئلة اتولّدت');
     ctx.quiz={questions:qs}; ctx.answers=qs.map(()=>({})); ctx.idx=0; ctx.review=null; ctx.pct=null;
     tt.status='done'; tt.msg='الامتحان جاهز'; renderTasks();
-    if(rec.col!=='courses'){ try{ await updateDoc(doc(db,rec.col||'summaries',rec.id),{quiz:ctx.quiz}); }catch{} }
+    try{ await updateDoc(doc(db, rec.col||'summaries', rec.id), {quiz:ctx.quiz}); }catch{}
     $('#qzSub').textContent='اتولّد ('+qs.length+' سؤال)';
     renderQuizQuestion();
   }catch(err){
@@ -1546,6 +1882,7 @@ function nextQ(){ const ctx=window._quizCtx; if(!ctx) return; if(ctx.idx<ctx.qui
 function prevQ(){ const ctx=window._quizCtx; if(!ctx) return; if(ctx.idx>0){ ctx.idx--; renderQuizQuestion(); } }
 async function finishQuiz(){
   const ctx=window._quizCtx; if(!ctx||!ctx.quiz) return;
+  if(ctx.official){ await submitOfficialExam(false); return; }
   const qs=ctx.quiz.questions; const ans=ctx.answers;
   const review=[]; const essayItems=[];
   qs.forEach((q,i)=>{
@@ -1584,19 +1921,28 @@ async function finishQuiz(){
   const prevBest=(typeof ctx.rec.bestScore==='number')?ctx.rec.bestScore:null;
   if(prevBest==null||pct>prevBest){
     ctx.rec.bestScore=pct;
-    if(ctx.rec.col!=='courses'){ try{ await updateDoc(doc(db,ctx.rec.col||'summaries',ctx.rec.id),{bestScore:pct}); }catch{} }
+    try{ await updateDoc(doc(db, ctx.rec.col||'summaries', ctx.rec.id), {bestScore:pct}); }catch{}
   }
   showQuizResult();
 }
 function showQuizResult(){
   const ctx=window._quizCtx; if(!ctx) return;
+  stopExamTimer();
   $('#qzBar').style.width='100%';
-  $('#qzSub').textContent='النتيجة';
-  const bs=$('#qzBest'); if(ctx.rec.bestScore!=null){ bs.textContent='🏆 أفضل درجة: '+ctx.rec.bestScore+'%'; bs.classList.remove('hidden'); }
+  $('#qzSub').textContent = ctx.official ? 'النتيجة النهائية' : 'النتيجة';
+  const bs=$('#qzBest');
+  if(!ctx.official && ctx.rec && ctx.rec.bestScore!=null){ bs.textContent='🏆 أفضل درجة: '+ctx.rec.bestScore+'%'; bs.classList.remove('hidden'); }
+  else bs.classList.add('hidden');
+  const tm=$('#qzTimer'); if(tm) tm.classList.add('hidden');
+  const nb=$('#newQuizBtn'); if(nb) nb.classList.toggle('hidden', !!ctx.official);
   const rv=ctx.review||[]; const pct=ctx.pct||0;
   const nGood=rv.filter(r=>r.ok===true).length; const nBad=rv.filter(r=>r.ok===false).length; const nNa=rv.filter(r=>r.ok===null).length;
   let h='<div class="qz-score"><div class="big">'+pct+'%</div><div class="sub">'+nGood+' صح • '+nBad+' غلط'+(nNa?(' • '+nNa+' غير مصحّح'):'')+' • من '+rv.length+' سؤال</div></div>';
-  h+='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px"><button class="btn btn-s" onclick="retryQuiz()">🔁 إعادة المحاولة (نفس الأسئلة)</button><button class="btn btn-p" onclick="newQuiz()">📝 امتحان جديد</button><button class="btn btn-g" onclick="exitQuiz()">→ رجوع</button></div>';
+  if(ctx.official){
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px"><button class="btn btn-p" onclick="exitQuiz()">→ رجوع لامتحاناتي</button></div>';
+  } else {
+    h+='<div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:18px"><button class="btn btn-s" onclick="retryQuiz()">🔁 إعادة المحاولة (نفس الأسئلة)</button><button class="btn btn-p" onclick="newQuiz()">📝 امتحان جديد</button><button class="btn btn-g" onclick="exitQuiz()">→ رجوع</button></div>';
+  }
   h+='<div class="head-row"><h2>📋 مراجعة الإجابات</h2></div>';
   rv.forEach((r,i)=>{
     const cls=r.ok===true?'good':(r.ok===false?'bad':'');
@@ -1620,9 +1966,9 @@ function showQuizResult(){
   $('#qzBody').innerHTML=h;
   ensureKatex().then(()=>renderMath($('#qzBody'))).catch(()=>{});
 }
-function retryQuiz(){ const ctx=window._quizCtx; if(!ctx||!ctx.quiz) return; ctx.answers=ctx.quiz.questions.map(()=>({})); ctx.idx=0; ctx.review=null; ctx.pct=null; renderQuizQuestion(); }
-function newQuiz(){ const ctx=window._quizCtx; if(!ctx) return; ctx.quiz=null; ctx.answers=[]; ctx.idx=0; ctx.review=null; ctx.pct=null; $('#qzSub').textContent='بيولّد أسئلة جديدة…'; generateQuiz(); }
-function exitQuiz(){ const ctx=window._quizCtx; if(ctx&&ctx.from==='res'){ go('res'); } else { goBack(); } }
+function retryQuiz(){ const ctx=window._quizCtx; if(!ctx||!ctx.quiz||ctx.official) return; ctx.answers=ctx.quiz.questions.map(()=>({})); ctx.idx=0; ctx.review=null; ctx.pct=null; renderQuizQuestion(); }
+function newQuiz(){ const ctx=window._quizCtx; if(!ctx||ctx.official) return; ctx.quiz=null; ctx.answers=[]; ctx.idx=0; ctx.review=null; ctx.pct=null; $('#qzSub').textContent='بيولّد أسئلة جديدة…'; generateQuiz(); }
+function exitQuiz(){ const ctx=window._quizCtx; stopExamTimer(); if(ctx&&ctx.official){ go('exams'); return; } if(ctx&&ctx.from==='res'){ go('res'); return; } goBack(); }
 
 /* ====================== اسأل ملفاتي B ====================== */
 const STOP=new Set(['في','من','على','عن','الى','ان','إن','هل','ما','ذا','هذه','ذلك','تلك','هو','هي','هم','كان','كانت','يكون','قد','لا','لم','لن','او','و','ثم','لكن','حتى','بينما','عندما','حيث','الذي','التي','الذين','كما','اي','كل','بعض','غير','مع','بدون','خلال','بعد','قبل','عند','لدى','اجل','منذ','حول','ضد','فوق','تحت','يمين','شمال','ده','دي','دول','انا','انت','احنا','انتم','دوت','ال','ب','ل','ف','ك','ه','ي','ا']);
@@ -1751,7 +2097,7 @@ async function loadStats(){
   const docs=snap.docs.sort((a,b)=>ts(b)-ts(a));
   docs.forEach(d=>{ const x=d.data(); META[d.id]={fileId:x.fileId,fileIds:x.fileIds||[],isGroup:!!x.isGroup,fileName:x.fileName,fileDeleted:!!x.fileDeleted}; });
   const n=docs.length; const words=docs.reduce((s,d)=>s+((d.data().summary&&d.data().summary.wordCount)||0),0);
-  const st=$('#stats'); if(st) st.innerHTML='<div class="feat"><div class="ic">📄</div><h3><bdi>'+n+'</bdi></h3><p>ملخصاتك</p></div><div class="feat"><div class="ic">📖</div><h3><bdi>'+(words.toLocaleString?words.toLocaleString('ar-EG'):words)+'</bdi></h3><p>كلمات اتلخصت</p></div><div class="feat"><div class="ic">⏱️</div><h3><bdi>'+Math.round(words/180)+'</bdi></h3><p>دقائق مذاكرة وفّرتها</p></div>';
+  const st=$('#stats'); if(st) st.innerHTML='<div class="feat"><div class="ic">📄</div><h3><bdi>'+n+'</bdi></h3><p>ملخصاتك</p></div><div class="feat"><div class="ic">📖</div><h3><bdi>'+(words)+'</bdi></h3><p>كلمات اتلخصت</p></div><div class="feat"><div class="ic">⏱️</div><h3><bdi>'+Math.round(words/180)+'</bdi></h3><p>دقائق مذاكرة وفّرتها</p></div>';
   HOME_DOCS=docs;
   filterHome();
 }
@@ -1824,6 +2170,8 @@ const exposed = {
   createCollege, createDept, createSem, createCourse, createLecture,
   openDept, openSem, openCourse, openLecture, openLec, openStudents, joinByCode, myCollege,
   openAnn, closeAnn, openCourseById,
+  openAdCompose, openAdEdit, closeAd, saveAnnouncement, deleteAnnouncement, clearAdImg,
+  openExamCompose, closeExamCompose, toggleExamSource, saveExamFromModal, deleteExam, openExamGrades, closeExamGrades, startOfficialExam, showOfficialResult,
   summarize, startQuizRec, startQuizById, startCourseQuiz, newQuiz, exitQuiz, retryQuiz,
   selectOpt, tfAns, setEssay, nextQ, prevQ, finishQuiz,
   newAskChat, selectAskChat, deleteAskChat, setAskScope, askResetScope, askAboutRec, askAttachImage, askClearImage, askSend,
